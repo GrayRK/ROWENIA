@@ -13,6 +13,8 @@ public class WarforgeItems {
     //Forge
     public static final RegistryObject<Item> WEAPON_FORGE_ITEM = ITEMS.register("weapon_forge",
             () -> new BlockItem(WarforgeBlocks.WEAPON_FORGE.get(), new Item.Properties()));
+    public static final RegistryObject<Item> ARMOR_FORGE_ITEM = ITEMS.register("armor_forge",
+            () -> new BlockItem(WarforgeBlocks.ARMOR_FORGE.get(), new Item.Properties()));
 
     //Blade blank
     public static final RegistryObject<Item> BLADE_BLANK_STONE =

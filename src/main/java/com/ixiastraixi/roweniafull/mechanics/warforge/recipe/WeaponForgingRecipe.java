@@ -1,15 +1,5 @@
 package com.ixiastraixi.roweniafull.mechanics.warforge.recipe;
 
-/*
- * Rowenia / Warforge — cleaned SOT snapshot
- * File: WeaponForgingRecipe.java
- * Purpose: Recipe: forms (short/long/two-handed/polearm), matching against active slots, assemble, (de)serialization.
- * Notes:
- *  - Comments rewritten to explain code blocks and hot parameters (coords, textures, slots).
- *  - Keep this file as source of truth as of 2025-08-30 13:57:50.
- */
-
-
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import net.minecraft.core.RegistryAccess;

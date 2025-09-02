@@ -1,16 +1,5 @@
 package com.ixiastraixi.roweniafull.registry.warforge;
 
-/*
- * Rowenia / Warforge — cleaned SOT snapshot
- * File: WarforgeRecipes.java
- * Purpose: Registration: recipe type and serializer for Weapon Forging.
- * Notes:
- *  - Comments rewritten to explain code blocks and hot parameters (coords, textures, slots).
- *  - Keep this file as source of truth as of 2025-08-30 13:57:50.
- */
-
-
-import com.ixiastraixi.roweniafull.RoweniaFull;
 import com.ixiastraixi.roweniafull.mechanics.warforge.recipe.ArmorForgingRecipe;
 import com.ixiastraixi.roweniafull.mechanics.warforge.recipe.WeaponForgingRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
@@ -21,11 +10,6 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 import static com.ixiastraixi.roweniafull.RoweniaFull.MOD_ID;
-
-/**
- * Регистрация рецептов кузницы.
- */
-
 
 public class WarforgeRecipes {
 

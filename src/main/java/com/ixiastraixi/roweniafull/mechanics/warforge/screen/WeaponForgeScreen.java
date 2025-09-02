@@ -1,4 +1,3 @@
-
 package com.ixiastraixi.roweniafull.mechanics.warforge.screen;
 
 import static com.ixiastraixi.roweniafull.RoweniaFull.MOD_ID;
@@ -21,16 +20,6 @@ public class WeaponForgeScreen extends AbstractContainerScreen<WeaponForgeMenu> 
     private static ResourceLocation rl(String path) { return Objects.requireNonNull(ResourceLocation.tryParse(MOD_ID + ":" + path)); }
 
     // фоны по вкладкам
-
-    /*
-     * === UI HOT CONSTANTS ===
-     * TEX_*: sizes of GUI background (pixels). Keep in sync with textures.
-     * AR_*: arrows (tab navigation) size and positions (relative to leftPos/topPos).
-     * FUEL_*: fuel indicator atlas (fuel_indicator.png 120x47) slicing + screen position.
-     * FORGE_*: hammer animation widget atlas and screen position.
-     *
-     * If you change textures or layout, tweak only these constants — logic will follow.
-     */
     private static final ResourceLocation TEX_SHORT      = rl("textures/gui/weapon_forge_short.png");
     private static final ResourceLocation TEX_LONG       = rl("textures/gui/weapon_forge_long.png");
     private static final ResourceLocation TEX_TWO_HANDED = rl("textures/gui/weapon_forge_two_handed.png");

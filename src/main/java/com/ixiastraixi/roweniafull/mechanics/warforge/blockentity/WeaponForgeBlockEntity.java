@@ -1,9 +1,5 @@
 package com.ixiastraixi.roweniafull.mechanics.warforge.blockentity;
 
-/**
- * Сущность блока «Оружейная кузница».
- * <p>Хранит инвентарь, топливо, прогресс крафта и выполняет серверную логику.</p>
- */
 import com.ixiastraixi.roweniafull.mechanics.warforge.menu.WeaponForgeMenu;
 import com.ixiastraixi.roweniafull.mechanics.warforge.recipe.WeaponForgingRecipe;
 import com.ixiastraixi.roweniafull.registry.warforge.WarforgeBlockEntities;

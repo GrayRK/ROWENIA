@@ -20,19 +20,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 public class WeaponForgeMenu extends AbstractContainerMenu {
-    /*
-     * === SLOT LAYOUT GUIDE ===
-     * Machine slots (BE indices): A=0, B=1, C=2, D=3, E=4, FUEL=5, OUT=6, F=7.
-     * Tabs/forms and active inputs:
-     *   SHORT:    B(26,55), E(26,83)
-     *   LONG:     A(26,37), B(26,55), E(26,83)
-     *   TWO-HAND: A(26,37), B(26,55), C(8,55), D(44,55), E(26,83)
-     *   POLEARM:  B(26,55), F(26,65), E(26,83)
-     * Preview slot (read-only) sits at (154,26).
-     * Fuel slot at (183,37). OUT at (114,61) (real item appears only after craft ready).
-     *
-     * Change coords here if you redraw the texture — logic uses these positions.
-     */
 
     private static final int TAB_SHORT=0, TAB_LONG=1, TAB_TWO=2, TAB_POLEARM=3;
     private static final int IDX_A=0, IDX_B=1, IDX_C=2, IDX_D=3, IDX_E=4, IDX_FUEL=5, IDX_OUT=6, IDX_F=7;
