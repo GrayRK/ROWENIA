@@ -1,4 +1,3 @@
-
 package com.ixiastraixi.roweniafull.mechanics.warforge.blockentity;
 
 import com.ixiastraixi.roweniafull.mechanics.warforge.menu.ArmorForgeMenu;
@@ -29,94 +28,96 @@ import java.util.Optional;
 
 public class ArmorForgeBlockEntity extends BlockEntity implements MenuProvider {
 
-    // === Индексы слотов (горячие) ===
-    // 0..8 — входы 3x3; 9 — топливо; 10 — выход
+    // --- индексы слотов (горячие поправки) ---
     public static final int SLOT_0=0, SLOT_1=1, SLOT_2=2, SLOT_3=3, SLOT_4=4, SLOT_5=5, SLOT_6=6, SLOT_7=7, SLOT_8=8;
     public static final int SLOT_FUEL = 9;
     public static final int SLOT_OUT  = 10;
 
-    // === Вкладки ===
+    // --- вкладки ---
     public static final int TAB_HELMET=0, TAB_CHEST=1, TAB_LEGS=2, TAB_BOOTS=3, TAB_SHIELD=4;
 
-    // === DataSlots (для меню/экрана) ===
-    // 0:progress, 1:maxProgress, 2:fuelBuffer(0..4), 3:cooldown, 4:currentTab
+    // --- dataslots: 0=progress,1=max,2=fuelBuf,3=unused,4=currentTab ---
     public final ContainerData data = new SimpleContainerData(5);
 
-    // --- инвентарь (11 слотов) ---
+    // --- инвентарь BE: 11 слотов ---
     private final NonNullList<ItemStack> items = NonNullList.withSize(11, ItemStack.EMPTY);
 
-    // --- состояние прогресса/топлива ---
-    private int progress = 0;
-    private int maxProgress = 100;
-    private int fuelBuffer = 0;
-    private int fuelPullCooldown = 15;
-    private long nextFuelGrabTick = -1L;    // когда можно забирать следующий уголь из слота (gameTime сервера); -1 = ещё не запланировано
+    // --- прогресс/топливо ---
+    private int  progress = 0;
+    private int  maxProgress = 100;
+    private int  fuelBuffer  = 0;                 // 0..4 “виртуальных угля”
+    private static final int FUEL_DELAY_TICKS = 15; // ~0.75s при 20 TPS
+    private long nextFuelGrabTick = -1L;          // когда брать следующий уголь из слота
     private boolean fuelHadItemLastTick = false;
 
-    // --- крафт ---
-    private boolean craftReady = false;
-    private boolean holdingCraft = false;
+    // --- управление крафтом ---
+    private boolean craftReady    = false;
+    private boolean holdingCraft  = false;
 
-    // --- вкладка ---
+    // --- текущая вкладка ---
     private int currentTab = TAB_HELMET;
 
-    // --- отпечаток входов для автосброса результата ---
+    // --- отпечаток входов (чтоб чистить OUT при изменениях) ---
     private long lastInputsFingerprint = 0L;
     private boolean suppressClearOnInputsChangeOnce = false;
-    // --- сколько ждать между подбором угля из слота топлива ---
-    private static final int FUEL_DELAY_TICKS = 15;
 
-    public ArmorForgeBlockEntity(BlockPos pos, BlockState state) { super(WarforgeBlockEntities.ARMOR_FORGE_BE.get(), pos, state); }
+    public ArmorForgeBlockEntity(BlockPos pos, BlockState state) {
+        super(WarforgeBlockEntities.ARMOR_FORGE_BE.get(), pos, state);
+    }
 
-    // === Контейнер для меню ===
+    // --- контейнер для меню (с проверками дистанции и setChanged) ---
     private final net.minecraft.world.SimpleContainer container = new net.minecraft.world.SimpleContainer(items.size()) {
-        @Override public int getMaxStackSize() { return 64; }
         @Override public int getContainerSize() { return items.size(); }
-        @Override public boolean isEmpty() { for (ItemStack s : items) if (!s.isEmpty()) return false; return true; }
+        @Override public boolean isEmpty() { for (ItemStack s: items) if (!s.isEmpty()) return false; return true; }
         @Override public ItemStack getItem(int i) { return items.get(i); }
         @Override public ItemStack removeItem(int i, int count) {
             ItemStack res = items.get(i).split(count);
             if (!res.isEmpty()) setChanged();
             return res;
         }
-        @Override public ItemStack removeItemNoUpdate(int i) { ItemStack s = items.get(i); items.set(i, ItemStack.EMPTY); return s; }
+        @Override public ItemStack removeItemNoUpdate(int i) {
+            ItemStack s = items.get(i);
+            items.set(i, ItemStack.EMPTY);
+            return s;
+        }
         @Override public void setItem(int i, ItemStack st) {
             items.set(i, st);
             if (st.getCount() > st.getMaxStackSize()) st.setCount(st.getMaxStackSize());
             setChanged();
         }
         @Override public void setChanged() { ArmorForgeBlockEntity.this.setChanged(); }
-        @Override public boolean stillValid(Player p) { return p.distanceToSqr(worldPosition.getX()+0.5, worldPosition.getY()+0.5, worldPosition.getZ()+0.5) <= 64; }
-        @Override public void clearContent() { for (int i=0;i<items.size();i++) items.set(i, ItemStack.EMPTY); setChanged(); }
+        @Override public boolean stillValid(Player p) {
+            double dx = p.getX()-(worldPosition.getX()+0.5);
+            double dy = p.getY()-(worldPosition.getY()+0.5);
+            double dz = p.getZ()-(worldPosition.getZ()+0.5);
+            return dx*dx+dy*dy+dz*dz <= 64.0;
+        }
+        @Override public void clearContent() {
+            for (int i=0;i<items.size();i++) items.set(i, ItemStack.EMPTY);
+            setChanged();
+        }
     };
 
     public net.minecraft.world.SimpleContainer container() { return container; }
 
-    // === MenuProvider ===
+    // --- MenuProvider ---
     @Override public Component getDisplayName() { return Component.translatable("block.roweniafull.armor_forge"); }
-    @Nullable @Override public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) { return new ArmorForgeMenu(id, inv, this, data); }
+    @Nullable @Override public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
+        return new ArmorForgeMenu(id, inv, this, data);
+    }
 
-    // === Паблик-API для меню ===
+    // --- API для меню ---
     public void setHoldingCraft(boolean v) { holdingCraft = v; }
     public boolean isCraftReady() { return craftReady; }
     public int currentTabIdx() { return currentTab; }
     public void nextTab() { currentTab = (currentTab + 1) % 5; setChanged(); }
     public void prevTab() { currentTab = (currentTab + 4) % 5; setChanged(); }
 
-    private void consumeInputsForRecipe(ArmorForgingRecipe r) {
-        int[] act = ArmorForgingRecipe.activeIndices(r.form());
-        for (int idx : act) {
-            ItemStack in = this.items.get(idx);
-            if (!in.isEmpty()) in.shrink(1); // по 1 предмету из активных слотов
-        }
-        setChanged();
-    }
-
-    // === Серверный тик ===
+    // --- серверный тик ---
     public static void serverTick(Level lvl, BlockPos pos, BlockState st, ArmorForgeBlockEntity be) {
         if (lvl.isClientSide) return;
 
-        // Сброс результата при изменении входов
+        // 1) если изменились входы — чистим OUT/прогресс
         long fp = be.inputsFingerprint();
         if (fp != be.lastInputsFingerprint) {
             be.lastInputsFingerprint = fp;
@@ -130,7 +131,7 @@ public class ArmorForgeBlockEntity extends BlockEntity implements MenuProvider {
             }
         }
 
-        // Подбор топлива в буфер с задержкой
+        // 2) топливо: подтягиваем по одному с равными паузами (даже если стак лежит)
         boolean fuelNow = !be.items.get(SLOT_FUEL).isEmpty();
         long now = lvl.getGameTime();
         if (fuelNow && !be.fuelHadItemLastTick) {
@@ -143,16 +144,15 @@ public class ArmorForgeBlockEntity extends BlockEntity implements MenuProvider {
             }
         }
 
-        // Поиск рецепта для текущей вкладки
+        // 3) рецепт для текущей вкладки
         Optional<ArmorForgingRecipe> rOpt = be.findRecipeForCurrentTab(lvl.getRecipeManager());
 
-        // Шаг прогресса
+        // 4) шаг прогресса: РАСТЁТ только при удержании, иначе плавно падает
         boolean canStep = false;
         if (!be.craftReady && rOpt.isPresent() && be.fuelBuffer > 0) {
             ItemStack outTry = rOpt.get().assemble(be.activeSnapshot(), lvl.registryAccess());
             canStep = be.canOutputAccept(outTry);
         }
-
         if (be.holdingCraft && canStep) {
             be.progress++;
             if (be.progress >= Math.max(1, be.maxProgress)) {
@@ -163,14 +163,14 @@ public class ArmorForgeBlockEntity extends BlockEntity implements MenuProvider {
             be.progress = Math.max(0, be.progress - 1);
         }
 
-        // Завершение крафта при удержании
+        // 5) завершение крафта при удержании на полном прогрессе
         if (be.craftReady && be.holdingCraft) {
             ArmorForgingRecipe r = rOpt.orElse(null);
             if (r != null && be.fuelBuffer > 0) {
                 ItemStack result = r.assemble(be.activeSnapshot(), lvl.registryAccess());
                 if (be.pushToOut(result)) {
                     be.consumeInputsForRecipe(r);
-                    be.consumeFuelUnit(now);      // <-- передаём now, чтобы задать паузу
+                    be.consumeFuelUnit(now);           // сдвигаем окно подбора топлива вперёд
                     be.progress = 0;
                     be.craftReady = false;
                     be.suppressClearOnInputsChangeOnce = true;
@@ -183,13 +183,13 @@ public class ArmorForgeBlockEntity extends BlockEntity implements MenuProvider {
         be.setChanged();
     }
 
+    // --- утилиты крафта/выхода/топлива ---
     private boolean canOutputAccept(ItemStack stack) {
         if (stack.isEmpty()) return false;
         ItemStack out = items.get(SLOT_OUT);
         if (out.isEmpty()) return true;
         if (!ItemStack.isSameItemSameTags(out, stack)) return false;
-        int sum = out.getCount() + stack.getCount();
-        return sum <= out.getMaxStackSize();
+        return out.getCount() + stack.getCount() <= out.getMaxStackSize();
     }
 
     private boolean pushToOut(ItemStack stack) {
@@ -204,7 +204,6 @@ public class ArmorForgeBlockEntity extends BlockEntity implements MenuProvider {
     private void consumeFuelUnit(long now) {
         if (fuelBuffer > 0) {
             fuelBuffer--;
-            // ВАЖНО: даже если nextFuelGrabTick уже "в прошлом", переносим окно вперёд.
             nextFuelGrabTick = Math.max(nextFuelGrabTick, now + FUEL_DELAY_TICKS);
             setChanged();
         }
@@ -230,10 +229,10 @@ public class ArmorForgeBlockEntity extends BlockEntity implements MenuProvider {
         return Optional.empty();
     }
 
-    /** Снимок только активных входов под форму вкладки */
+    /** снимок только активных ячеек под форму текущей вкладки */
     private net.minecraft.world.SimpleContainer activeSnapshot() {
         net.minecraft.world.SimpleContainer snap = new net.minecraft.world.SimpleContainer(9);
-        int[] act = activeIndices();
+        int[] act = activeIndices(currentTab);
         for (int i=0;i<9;i++) {
             boolean use=false; for (int a:act) if (a==i){use=true;break;}
             snap.setItem(i, use ? items.get(i).copy() : ItemStack.EMPTY);
@@ -241,15 +240,24 @@ public class ArmorForgeBlockEntity extends BlockEntity implements MenuProvider {
         return snap;
     }
 
-    private int[] activeIndices() {
-        return switch (currentTab) {
-            case TAB_HELMET    -> new int[]{0,1,2,3,5};
-            case TAB_CHEST     -> new int[]{0,2,3,4,5,6,7,8};
-            case TAB_LEGS      -> new int[]{0,1,2,3,5,6,8};
-            case TAB_BOOTS     -> new int[]{3,5,6,8};
-            case TAB_SHIELD    -> new int[]{0,1,2,3,4,5,7};
+    private static int[] activeIndices(int tab) {
+        return switch (tab) {
+            case TAB_HELMET -> new int[]{0,1,2,3,5};
+            case TAB_CHEST  -> new int[]{0,2,3,4,5,6,7,8};
+            case TAB_LEGS   -> new int[]{0,1,2,3,5,6,8};
+            case TAB_BOOTS  -> new int[]{3,5,6,8};
+            case TAB_SHIELD -> new int[]{0,1,2,3,4,5,7};
             default -> new int[]{0};
         };
+    }
+
+    private void consumeInputsForRecipe(ArmorForgingRecipe r) {
+        int[] act = ArmorForgingRecipe.activeIndices(r.form());
+        for (int idx : act) {
+            ItemStack in = this.items.get(idx);
+            if (!in.isEmpty()) in.shrink(1);
+        }
+        setChanged();
     }
 
     private void recalcFuelNeedAndTime() {
@@ -265,10 +273,10 @@ public class ArmorForgeBlockEntity extends BlockEntity implements MenuProvider {
 
     private long inputsFingerprint() {
         long h = 1469598103934665603L;
-        int[] act = activeIndices();
+        int[] act = activeIndices(currentTab);
         for (int idx: act) {
             ItemStack s = items.get(idx);
-            int id = s.isEmpty() ? -1 : net.minecraft.world.item.Item.getId(s.getItem());
+            int id = s.isEmpty()? -1 : net.minecraft.world.item.Item.getId(s.getItem());
             int c  = s.isEmpty()? 0  : s.getCount();
             h ^= (id * 1099511628211L) ^ (c * 1469598103934665603L);
             h *= 1099511628211L;
@@ -277,19 +285,34 @@ public class ArmorForgeBlockEntity extends BlockEntity implements MenuProvider {
         return h;
     }
 
-    // === Дроп содержимого при разрушении ===
+    // --- дроп содержимого + буфер топлива ---
     public void dropAll(Level lvl, BlockPos pos) {
         for (int i=0;i<items.size();i++) {
             ItemStack s = items.get(i);
             if (!s.isEmpty()) Containers.dropItemStack(lvl, pos.getX()+0.5, pos.getY()+0.5, pos.getZ()+0.5, s);
             items.set(i, ItemStack.EMPTY);
         }
-
+        // материализуем буфер в уголь
+        if (fuelBuffer > 0) {
+            int count = fuelBuffer;
+            while (count > 0) {
+                int take = Math.min(64, count);
+                Containers.dropItemStack(lvl, pos.getX()+0.5, pos.getY()+0.5, pos.getZ()+0.5, new ItemStack(Items.COAL, take));
+                count -= take;
+            }
+            fuelBuffer = 0;
+        }
         setChanged();
     }
 
-    // === Save/Load ===
-    private void pushData() { data.set(0,progress); data.set(1,maxProgress); data.set(2,fuelBuffer); data.set(3,fuelPullCooldown); data.set(4,currentTab); }
+    // --- save/load + dataslots ---
+    private void pushData() {
+        data.set(0, progress);
+        data.set(1, maxProgress);
+        data.set(2, fuelBuffer);
+        data.set(3, 0);
+        data.set(4, currentTab);
+    }
 
     @Override protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -315,10 +338,6 @@ public class ArmorForgeBlockEntity extends BlockEntity implements MenuProvider {
         maxProgress = tag.getInt("MaxProgress");
         fuelBuffer = tag.getInt("FuelBuffer");
         nextFuelGrabTick = tag.contains("NextFuelGrabTick") ? tag.getLong("NextFuelGrabTick") : -1L;
-        if (nextFuelGrabTick < 0 && !items.get(SLOT_FUEL).isEmpty() && fuelBuffer < 4) {
-            long now = (level != null) ? level.getGameTime() : 0L;
-            nextFuelGrabTick = now + 15;
-        }
         craftReady = tag.getBoolean("CraftReady");
         holdingCraft = tag.getBoolean("Hold");
         currentTab = tag.getInt("Tab");
@@ -328,9 +347,11 @@ public class ArmorForgeBlockEntity extends BlockEntity implements MenuProvider {
             int slot = e.getByte("Slot") & 255;
             if (slot>=0 && slot<items.size()) items.set(slot, ItemStack.of(e));
         }
+        if (nextFuelGrabTick < 0 && !items.get(SLOT_FUEL).isEmpty() && fuelBuffer < 4) {
+            long nowLoad = (level != null) ? level.getGameTime() : 0L;
+            nextFuelGrabTick = nowLoad + FUEL_DELAY_TICKS;
+        }
     }
 
-
-    // вызывался из меню для сброса локальных эффектов при забирании результата
-    public void resetAfterTake(Level lvl) { /* держим для единообразия */ }
+    public void resetAfterTake(Level lvl) { /* зарезервировано под локальные эффекты */ }
 }

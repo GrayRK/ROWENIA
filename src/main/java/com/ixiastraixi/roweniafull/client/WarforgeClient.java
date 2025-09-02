@@ -2,6 +2,7 @@ package com.ixiastraixi.roweniafull.client;
 
 import static com.ixiastraixi.roweniafull.RoweniaFull.MOD_ID;
 
+import com.ixiastraixi.roweniafull.mechanics.warforge.screen.ArmorForgeScreen;
 import com.ixiastraixi.roweniafull.mechanics.warforge.screen.WeaponForgeScreen;
 import com.ixiastraixi.roweniafull.registry.warforge.WarforgeMenus;
 import net.minecraft.client.gui.screens.MenuScreens;
@@ -16,6 +17,7 @@ public class WarforgeClient {
     public static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             MenuScreens.register(WarforgeMenus.WEAPON_FORGE_MENU.get(), WeaponForgeScreen::new);
+            MenuScreens.register(WarforgeMenus.ARMOR_FORGE_MENU.get(), ArmorForgeScreen::new);
         });
     }
 }
