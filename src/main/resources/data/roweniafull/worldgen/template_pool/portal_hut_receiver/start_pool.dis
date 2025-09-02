@@ -1,0 +1,15 @@
+{
+  "name": "roweniafull:portal_hut_receiver/start_pool",
+  "fallback": "minecraft:empty",
+  "elements": [
+    {
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "roweniafull:portal_hut_receiver/portal_hut_receiver",
+        "processors": "minecraft:empty",
+        "projection": "rigid"
+      },
+      "weight": 1
+    }
+  ]
+}

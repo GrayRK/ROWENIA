@@ -1,0 +1,8 @@
+{
+  "type": "roweniafull:weapon_forging",
+  "form": "polearm",
+  "material":   { "tag": "minecraft:iron_ingot" },
+  "handle_a":   { "tag": "minecraft:blaze_rod" },
+  "handle_b":   { "tag": "minecraft:blaze_rod" },
+  "result":     { "item": "minecraft:iron_sword", "count": 1}
+}

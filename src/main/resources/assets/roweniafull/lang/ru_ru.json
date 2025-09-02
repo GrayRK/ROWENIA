@@ -1,0 +1,53 @@
+{
+  "attribute.name.roweniafull.item_loss_chance": "Шанс потери предметов",
+
+  "attribute.name.roweniafull.class.warrior": "Воин",
+  "attribute.name.roweniafull.class.hunter": "Охотник",
+  "attribute.name.roweniafull.class.sorcerer": "Чародей",
+  "attribute.name.roweniafull.class.wizard": "Волшебник",
+  "attribute.name.roweniafull.class.cook": "Повар",
+  "attribute.name.roweniafull.class.miner": "Горняк",
+
+  "block.roweniafull.weapon_forge": "Оружейная кузница",
+
+  "item.roweniafull.blade_blank_stone": "Заготовка каменного лезвия",
+  "item.roweniafull.blade_blank_iron": "Заготовка железного лезвия",
+  "item.roweniafull.blade_blank_gold": "Заготовка золотого лезвия",
+  "item.roweniafull.blade_blank_diamond": "Заготовка алмазного лезвия",
+  "item.roweniafull.blade_blank_netherite": "Заготовка незеритового лезвия",
+
+  "item.roweniafull.handle": "Рукоять",
+  "item.roweniafull.sturdy_handle": "Прочная рукоять",
+  "item.roweniafull.ergonomic_handle": "Эргономичная Рукоять",
+  "item.roweniafull.heavy_handle": "Тяжёлая Рукоять",
+
+  "item.roweniafull.armor_plate_stone": "Каменная пластина",
+  "item.roweniafull.armor_plate_iron": "Жлезная пластина",
+  "item.roweniafull.armor_plate_gold": "Золотая пластина",
+  "item.roweniafull.armor_plate_diamond": "Алмазная пластина",
+  "item.roweniafull.armor_plate_netherite": "Незеритовая пластина",
+
+  "quality.roweniafull.common":     "[Плохое]",
+  "quality.roweniafull.rare":       "[Обычное]",
+  "quality.roweniafull.fine":       "[Качественное]",
+  "quality.roweniafull.epic":       "[Высококласное]",
+  "quality.roweniafull.legendary":  "[Мастерское]",
+
+  "quality.roweniafull.prefix.m.common":   "[Плохой]",
+  "quality.roweniafull.prefix.m.rare":     "[Обычный]",
+  "quality.roweniafull.prefix.m.fine":     "[Качественный]",
+  "quality.roweniafull.prefix.m.epic":     "[Высококласный]",
+  "quality.roweniafull.prefix.m.legend":   "[Мастерский]",
+
+  "quality.roweniafull.prefix.f.common":   "[Плохая]",
+  "quality.roweniafull.prefix.f.rare":     "[Обычная]",
+  "quality.roweniafull.prefix.f.fine":     "[Качественная]",
+  "quality.roweniafull.prefix.f.epic":     "[Высококласная]",
+  "quality.roweniafull.prefix.f.legend":   "[Мастерская]",
+
+  "quality.roweniafull.prefix.n.common":   "[Плохое]",
+  "quality.roweniafull.prefix.n.rare":     "[Обычное]",
+  "quality.roweniafull.prefix.n.fine":     "[Качественное]",
+  "quality.roweniafull.prefix.n.epic":     "[Высококласное]",
+  "quality.roweniafull.prefix.n.legend":   "[Мастерское]"
+}

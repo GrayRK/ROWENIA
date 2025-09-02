@@ -1,0 +1,11 @@
+{
+  "structures": [
+    { "structure": "roweniafull:portal_hut_receiver", "weight": 1 }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 40,
+    "separation": 12,
+    "salt": 987654321
+  }
+}

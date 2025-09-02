@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "roweniafull:armor_plate_stone",
+    "roweniafull:armor_plate_iron",
+    "roweniafull:armor_plate_gold",
+    "roweniafull:armor_plate_diamond",
+    "roweniafull:armor_plate_netherite"
+  ]
+}

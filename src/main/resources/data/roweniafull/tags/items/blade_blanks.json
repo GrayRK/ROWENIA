@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "roweniafull:blade_blank_stone",
+    "roweniafull:blade_blank_iron",
+    "roweniafull:blade_blank_gold",
+    "roweniafull:blade_blank_diamond",
+    "roweniafull:blade_blank_netherite"
+  ]
+}

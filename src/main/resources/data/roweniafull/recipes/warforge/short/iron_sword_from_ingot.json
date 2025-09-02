@@ -1,0 +1,7 @@
+{
+  "type": "roweniafull:weapon_forging",
+  "form": "short",
+  "material": { "item": "minecraft:iron_ingot" },
+  "handle":   { "item": "minecraft:stick" },
+  "result":   { "item": "minecraft:iron_sword", "count": 1 }
+}
