@@ -12,6 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -25,78 +26,112 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
-
 import java.util.Optional;
 
 public class WeaponForgeBlockEntity extends BlockEntity implements MenuProvider {
 
-    // --- вкладки форм оружия ---
-    public static final int TYPE_SHORT = 0;      // короткое
-    public static final int TYPE_LONG = 1;       // длинное
-    public static final int TYPE_TWO_HANDED = 2; // двуручное
-    public static final int TYPE_POLEARM = 3;    // древковое
+//-------------------------------------------------
+//       Константы: Слоты, Типы, Состояния
+//-------------------------------------------------
 
-    // --- индексы слотов инвентаря ---
-    public static final int SLOT_A = 0; // лезвие/часть А
-    public static final int SLOT_B = 1; // лезвие/часть B
-    public static final int SLOT_C = 2; // часть C
-    public static final int SLOT_D = 3; // часть D
-    public static final int SLOT_E = 4; // нижняя рукоять
-    public static final int SLOT_FUEL = 5; // топливо
-    public static final int SLOT_OUT  = 6; // результат
-    public static final int SLOT_F    = 7; // верхняя рукоять для polearm
+    // --- Вкладки ---
+    public static final int TYPE_SHORT      = 0; // Короткое
+    public static final int TYPE_LONG       = 1; // Длинное
+    public static final int TYPE_TWO_HANDED = 2; // Двуручное
+    public static final int TYPE_POLEARM    = 3; // Древковое
 
-    // --- внутренний инвентарь кузницы ---
+    // --- Индексы слотов ---
+    public static final int SLOT_A    = 0; // Лезвие
+    public static final int SLOT_B    = 1; // Лезвие
+    public static final int SLOT_C    = 2; // Лезвие
+    public static final int SLOT_D    = 3; // Лезвие
+    public static final int SLOT_E    = 4; // Нижняя рукоять
+    public static final int SLOT_F    = 7; // Верхняя рукоять
+    public static final int SLOT_FUEL = 5; // Топливо
+    public static final int SLOT_OUT  = 6; // Выход
+
+    // --- Параметры крафта ---
+    private int  progress          = 0;          // Текущий прогресс
+    private int  maxProgress       = 0;          // Сколько тиков требуется
+    private int  currentTypeIdx    = TYPE_SHORT; // Выбранная вкладка
+    private boolean isHoldingCraft = false;      // Кнопка крафта удерживается
+    private boolean craftReady     = false;      // Результат готов
+    private boolean skipOutClear   = false;      // Пропуск автоочистки OUT
+
+    // --- Параметры топлива ---
+    private static final int FUEL_BUFFER_CAP = 4;     // Сколько максимум хранит буфер
+    private int fuelCoal                     = 0;     // Сколько сейчас "Угля" в буфере
+    private int fuelCharcoal                 = 0;     // Сколько сейчас "Древесного Угля" в буфере
+    private int fuelPullCooldown             = 0;     // Задержка для забора в буфер
+    private int fuelNeed                     = 1;     // Кол-во топлива на крафт
+    private boolean fuelHadItemLastTick      = false; // Проверка было ли топливо в прошлый тик
+
+    // --- Утилиты ---
+    private long lastInputsFingerprint = Long.MIN_VALUE;
+
+    // --- Внутренний инвентарь ---
     private final NonNullList<ItemStack> items = NonNullList.withSize(8, ItemStack.EMPTY);
-    /** Обёртка, через которую меню получает доступ к слотам. */
+
+    // Обёртка, через которую меню работает с инвентарём
     private final net.minecraft.world.Container container = new net.minecraft.world.Container() {
-        @Override public int getContainerSize() { return items.size(); }
-        @Override public boolean isEmpty() { for (ItemStack s : items) if (!s.isEmpty()) return false; return true; }
-        @Override public ItemStack getItem(int i) { return items.get(i); }
-        @Override public ItemStack removeItem(int i, int count) {
+        @Override
+            public int getContainerSize() {
+            return items.size();
+        }
+        @Override
+            public boolean isEmpty() {
+            for (ItemStack s : items) if (!s.isEmpty()) return false;
+            return true;
+        }
+        @Override
+            public ItemStack getItem(int i) {
+            return items.get(i);
+        }
+        @Override
+            public ItemStack removeItem(int i, int count) {
             ItemStack res = items.get(i).split(count);
             if (!res.isEmpty()) setChanged();
             return res;
         }
-        @Override public ItemStack removeItemNoUpdate(int i) {
-            ItemStack s = items.get(i); items.set(i, ItemStack.EMPTY); return s;
+        @Override
+            public ItemStack removeItemNoUpdate(int i) {
+            ItemStack s = items.get(i);
+            items.set(i, ItemStack.EMPTY);
+            return s;
         }
-        @Override public void setItem(int i, ItemStack st) {
+        @Override
+            public void setItem(int i, ItemStack st) {
             items.set(i, st);
-            if (st.getCount() > st.getMaxStackSize()) st.setCount(st.getMaxStackSize());
+            if (st.getCount() > st.getMaxStackSize())
+                st.setCount(st.getMaxStackSize());
             setChanged();
         }
-        @Override public void setChanged() { WeaponForgeBlockEntity.this.setChanged(); }
-        @Override public boolean stillValid(Player p) {
-            if (level == null || level.getBlockEntity(worldPosition) != WeaponForgeBlockEntity.this) return false;
-            return p.distanceToSqr(worldPosition.getX()+0.5, worldPosition.getY()+0.5, worldPosition.getZ()+0.5) <= 64.0;
+        @Override
+            public void setChanged() {
+            WeaponForgeBlockEntity.this.setChanged();
         }
-        @Override public void clearContent() { items.clear(); }
+        @Override
+            public boolean stillValid(Player p) {
+            if (level == null || level.getBlockEntity(worldPosition)
+                    != WeaponForgeBlockEntity.this) return false;
+            return p.distanceToSqr(
+                    worldPosition.getX()+0.5,
+                    worldPosition.getY()+0.5,
+                    worldPosition.getZ()+0.5) <= 64.0;
+        }
+        @Override
+            public void clearContent() {
+            items.clear();
+        }
     };
 
-    // --- параметры крафта и состояния ---
-    private int  progress = 0;              // текущий прогресс
-    private int  maxProgress = 0;           // сколько тиков требуется
-    private int  currentTypeIdx = TYPE_SHORT; // выбранная вкладка
-    private boolean isHoldingCraft = false; // игрок удерживает кнопку крафта
-    private boolean craftReady = false;     // результат готов и лежит в OUT
-    private boolean fuelHadItemLastTick = false; // был ли предмет в слоте топлива в прошлый тик
-    private boolean suppressClearOnInputsChangeOnce = false; // флаг для пропуска автоочистки OUT
+//-----------------------------------------------------------------
+//       Контейнерные слоты для синхронизации с клиентом:
+//-----------------------------------------------------------------
 
-    // отпечаток входов для отслеживания изменений
-    private long lastInputsFingerprint = Long.MIN_VALUE;
-
-    // --- буфер топлива и параметры потребления ---
-    private static final int FUEL_BUFFER_CAP = 4; // максимальный запас
-    private int fuelCoal = 0;       // количество угля
-    private int fuelCharcoal = 0;   // количество древесного угля
-    private int fuelPullCooldown = 0; // задержка подсоса топлива (тики)
-    private int fuelNeed = 1;       // сколько топлива нужно на крафт
-
-    // dataSlots: индексы для синхронизации с клиентом
-    // 0=progress,1=max,2=fuel(0..4),3=fuelNeed,4=tab
     private final ContainerData dataAccess = new SimpleContainerData(5) {
-        @Override public int get(int i) {
+        @Override
+        public int get(int i) {
             return switch (i) {
                 case 0 -> progress;
                 case 1 -> maxProgress;
@@ -106,36 +141,64 @@ public class WeaponForgeBlockEntity extends BlockEntity implements MenuProvider 
                 default -> 0;
             };
         }
-        @Override public void set(int i, int v) {
+        @Override
+        public void set(int i, int v) {
             switch (i) {
                 case 0 -> progress = v;
                 case 1 -> maxProgress = v;
-                case 2 -> { int c = Math.max(0, Math.min(FUEL_BUFFER_CAP, v)); fuelCoal=c; fuelCharcoal=0; }
+                case 2 -> { int c = Math.max(0, Math.min(FUEL_BUFFER_CAP, v));
+                    fuelCoal=c; fuelCharcoal=0; }
                 case 3 -> fuelNeed = v;
                 case 4 -> currentTypeIdx = v;
             }
         }
-        @Override public int getCount() { return 5; }
+        @Override
+        public int getCount() { return 5; }
     };
+
+//---------------------------
+//       Конструктор
+//---------------------------
 
     public WeaponForgeBlockEntity(BlockPos pos, BlockState state) {
         super(WarforgeBlockEntities.WEAPON_FORGE_BE.get(), pos, state);
         recalcFuelNeedAndTime();
     }
 
-    // ===== UI/меню =====
+//---------------------------------------------
+//          Реализация MenuProvider
+//---------------------------------------------
+
     public ContainerData dataAccess() { return dataAccess; }
+
     public net.minecraft.world.Container container() { return container; }
-    @Override public Component getDisplayName() { return Component.literal("Weapon Forge"); }
-    @Nullable @Override public AbstractContainerMenu createMenu(int id, Inventory inv, Player p) {
+
+    @Override
+    public Component getDisplayName() {
+        return Component.literal("Weapon Forge");
+    }
+    @Nullable
+    @Override
+    public AbstractContainerMenu createMenu(int id, Inventory inv, Player p) {
         return new WeaponForgeMenu(id, inv, this, dataAccess);
     }
 
+//-----------------------------------------------
+//          Методы для меню / клиента
+//-----------------------------------------------
+
     public void setHoldingCraft(boolean hold) { isHoldingCraft = hold; }
+
     public boolean isCraftReady() { return craftReady; }
 
-    public void nextType() { currentTypeIdx = (currentTypeIdx + 1) % 4; onInputsChanged(); }
-    public void prevType() { currentTypeIdx = (currentTypeIdx + 3) % 4; onInputsChanged(); }
+    public void nextType() {
+        currentTypeIdx = (currentTypeIdx + 1) % 4;
+        onInputsChanged();
+    }
+    public void prevType() {
+        currentTypeIdx = (currentTypeIdx + 3) % 4;
+        onInputsChanged();
+    }
 
     private void onInputsChanged() {
         recalcFuelNeedAndTime();
@@ -146,17 +209,19 @@ public class WeaponForgeBlockEntity extends BlockEntity implements MenuProvider 
         setChanged();
     }
 
-    // ===== Тик сервера =====
+//--------------------------------------------
+//          Главный тик сервера
+//--------------------------------------------
+
     public static void serverTick(Level lvl, BlockPos pos, BlockState st, WeaponForgeBlockEntity be) {
         if (lvl.isClientSide) return;
 
-        // 0) если входы/вкладка поменялись — сбросить состояние и очистить OUT
+        // 1. Проверяем, изменились ли входы/вкладка: если да, сбрасываем прогресс и OUT
         long fp = be.inputsFingerprint();
         if (fp != be.lastInputsFingerprint) {
             be.lastInputsFingerprint = fp;
-            if (be.suppressClearOnInputsChangeOnce) {
-                // пропускаем единожды: сами же только что изменили входы (списали ингредиенты)
-                be.suppressClearOnInputsChangeOnce = false;
+            if (be.skipOutClear) {
+                be.skipOutClear = false;
             } else {
                 be.progress = 0;
                 be.craftReady = false;
@@ -165,10 +230,10 @@ public class WeaponForgeBlockEntity extends BlockEntity implements MenuProvider 
             }
         }
 
-        // 1) подсос топлива в буфер — по 1 шт с задержкой
+        // 2. Подтягиваем топливо в буфер с задержкой
         boolean fuelNowNotEmpty = !be.items.get(SLOT_FUEL).isEmpty();
         if (fuelNowNotEmpty && !be.fuelHadItemLastTick) {
-            be.fuelPullCooldown = Math.max(be.fuelPullCooldown, 15); // ~0.75с
+            be.fuelPullCooldown = Math.max(be.fuelPullCooldown, 15);
         }
         be.fuelHadItemLastTick = fuelNowNotEmpty;
         if (be.fuelPullCooldown > 0) be.fuelPullCooldown--;
@@ -176,10 +241,10 @@ public class WeaponForgeBlockEntity extends BlockEntity implements MenuProvider 
             be.fuelPullCooldown = 15;
         }
 
-        // 2) считаем рецепт на лету (только по активным слотам)
+        // 3. Ищем рецепт для текущей вкладки
         Optional<WeaponForgingRecipe> rOpt = be.findRecipeForCurrentTab(lvl.getRecipeManager());
 
-        // 3) шаг прогресса — только пока НЕ craftReady, есть рецепт и хватает буфера, и есть место в OUT
+        // 4. Считаем, можем ли увеличить прогресс: нужна удержанная кнопка, рецепт и достаточный буфер топлива
         boolean canStepUp = false;
         if (!be.craftReady && be.isHoldingCraft && rOpt.isPresent() && be.totalBuffer() >= be.fuelNeed) {
             ItemStack outTry = rOpt.get().assemble(be.activeSnapshot(), lvl.registryAccess());
@@ -189,28 +254,34 @@ public class WeaponForgeBlockEntity extends BlockEntity implements MenuProvider 
         if (canStepUp) {
             be.progress++;
             if (be.progress >= Math.max(1, be.maxProgress)) {
-                // завершили: тратим буфер и КЛАДЁМ результат в OUT; теперь можно забирать
                 if (be.consumeBuffer(be.fuelNeed)) {
                     ItemStack outStack = rOpt.get().assemble(be.activeSnapshot(), lvl.registryAccess());
                     be.consumeInputsForCurrentTab();
-                    be.suppressClearOnInputsChangeOnce = true;
+                    be.skipOutClear = true;
                     if (!outStack.isEmpty()) be.mergeOutput(outStack);
                     be.craftReady = true;
-                    be.fuelPullCooldown = Math.max(be.fuelPullCooldown, 15); // ~0.75s пауза перед ПЕРВЫМ углём после крафта
+                    be.fuelPullCooldown = Math.max(be.fuelPullCooldown, 15);
                 }
                 be.progress = 0;
                 be.setChanged();
             }
         } else {
-            // плавный спад только когда кнопку отпустили
             if (be.progress > 0 && !be.isHoldingCraft) {
                 be.progress--;
                 be.setChanged();
             }
         }
+
+        // 5. обновляем maxProgress/fuelNeed на случай смены вкладки
+        be.recalcFuelNeedAndTime();
+        be.setChanged();
     }
 
-    // ===== Рецепты / снапшоты =====
+//-----------------------------------------------------
+//          Поиск рецепта и снимки входов
+//-----------------------------------------------------
+
+    // Находит рецепт для текущей вкладки (формы брони), если он есть.
     private Optional<WeaponForgingRecipe> findRecipeForCurrentTab(RecipeManager rm) {
         var snap = activeSnapshot();
         WeaponForgingRecipe.Form need = switch (currentTypeIdx) {
@@ -226,17 +297,17 @@ public class WeaponForgeBlockEntity extends BlockEntity implements MenuProvider 
         return Optional.empty();
     }
 
-    /**
-     * Снимок только активных входных слотов. Остальные ячейки пустые.
-     */
-    private net.minecraft.world.SimpleContainer activeSnapshot() {
-        var snap = new net.minecraft.world.SimpleContainer(8);
+    // Снимок только активных слотов (остальные пустые).
+    private SimpleContainer activeSnapshot() {
+        var snap = new SimpleContainer(8);
         for (int idx : activeIndices()) {
             snap.setItem(idx, items.get(idx).copy());
         }
         return snap;
     }
 
+    // Индексы активных слотов для текущего типа брони.
+    // Эти массивы можно настраивать при изменении расположения слотов.
     private int[] activeIndices() {
         return switch (currentTypeIdx) {
             case TYPE_SHORT      -> new int[]{SLOT_B, SLOT_E};
@@ -247,6 +318,7 @@ public class WeaponForgeBlockEntity extends BlockEntity implements MenuProvider 
         };
     }
 
+    // Отпечаток входов: используется для сброса прогресса при изменении слотов или вкладки.
     private long inputsFingerprint() {
         long h = 1125899906842597L;
         for (int i : activeIndices()) {
@@ -260,11 +332,14 @@ public class WeaponForgeBlockEntity extends BlockEntity implements MenuProvider 
         return h;
     }
 
-    // ===== Топливо =====
-    /** Суммарный запас топлива в буфере (0..4). */
+//--------------------------------------------------------------
+//          Топливо: буфер, пополнение и потребление
+//--------------------------------------------------------------
+
+    // Сколько всего топлива лежит в буфере (0..4)
     private int totalBuffer() { return Math.min(FUEL_BUFFER_CAP, fuelCoal + fuelCharcoal); }
 
-    /** Пытается потратить указанное количество топлива. */
+    // Пытается потратить amt единиц топлива, возвращает true, если удалось.
     private boolean consumeBuffer(int amt) {
         if (totalBuffer() < amt) return false;
         int take = amt;
@@ -278,28 +353,33 @@ public class WeaponForgeBlockEntity extends BlockEntity implements MenuProvider 
         return take == 0;
     }
 
-    /** Подтягивает топливо из слота в буфер. */
+    // Подтягивает 1 единицу топлива из слота в буфер (если есть место).
     private boolean refillBufferFromFuelSlot() {
         int space = FUEL_BUFFER_CAP - totalBuffer();
         if (space <= 0) return false;
-
         ItemStack f = items.get(SLOT_FUEL);
         if (f.isEmpty()) return false;
-
         Item it = f.getItem();
         if (it == Items.COAL && space >= 1) {
             f.shrink(1); if (f.isEmpty()) items.set(SLOT_FUEL, ItemStack.EMPTY);
-            fuelCoal += 1; setChanged(); return true;
+            fuelCoal += 1;
+            setChanged();
+            return true;
         }
         if (it == Items.CHARCOAL && space >= 1) {
             f.shrink(1); if (f.isEmpty()) items.set(SLOT_FUEL, ItemStack.EMPTY);
-            fuelCharcoal += 1; setChanged(); return true;
+            fuelCharcoal += 1;
+            setChanged();
+            return true;
         }
         return false;
     }
 
-    // ===== Работа с OUT/ингредиентами =====
-    /** Проверяет, поместится ли результат в выходной слот. */
+//----------------------------------------------------------------------
+//          Работа с выходным слотом и списание ингредиентов
+//----------------------------------------------------------------------
+
+    // Проверяет, поместится ли в выходной слот новый предмет.
     private boolean canOutputAccept(ItemStack toInsert) {
         if (toInsert.isEmpty()) return false;
         ItemStack out = items.get(SLOT_OUT);
@@ -308,7 +388,7 @@ public class WeaponForgeBlockEntity extends BlockEntity implements MenuProvider 
         return out.getCount() + toInsert.getCount() <= out.getMaxStackSize();
     }
 
-    /** Сливает новый предмет в выходной слот. */
+    // Сливает новый предмет в выходной слот.
     private void mergeOutput(ItemStack stack) {
         if (stack.isEmpty()) return;
         ItemStack out = items.get(SLOT_OUT);
@@ -316,37 +396,48 @@ public class WeaponForgeBlockEntity extends BlockEntity implements MenuProvider 
         else if (ItemStack.isSameItemSameTags(out, stack)) out.grow(stack.getCount());
     }
 
-    /** Списывает ингредиенты в соответствии с текущей вкладкой. */
+    // Списывает ингредиенты по текущей вкладке (каждой ячейке -1).
     public void consumeInputsForCurrentTab() {
         switch (currentTypeIdx) {
-            case TYPE_SHORT -> { items.get(SLOT_B).shrink(1); items.get(SLOT_E).shrink(1); }
-            case TYPE_LONG  -> { items.get(SLOT_A).shrink(1); items.get(SLOT_B).shrink(1); items.get(SLOT_E).shrink(1); }
-            case TYPE_TWO_HANDED -> {
-                items.get(SLOT_A).shrink(1); items.get(SLOT_B).shrink(1);
-                items.get(SLOT_C).shrink(1); items.get(SLOT_D).shrink(1);
+            case TYPE_SHORT -> {
+                items.get(SLOT_B).shrink(1);
                 items.get(SLOT_E).shrink(1);
             }
-            case TYPE_POLEARM -> { items.get(SLOT_B).shrink(1); items.get(SLOT_F).shrink(1); items.get(SLOT_E).shrink(1); }
+            case TYPE_LONG  -> {
+                items.get(SLOT_A).shrink(1);
+                items.get(SLOT_B).shrink(1);
+                items.get(SLOT_E).shrink(1);
+            }
+            case TYPE_TWO_HANDED -> {
+                items.get(SLOT_A).shrink(1);
+                items.get(SLOT_B).shrink(1);
+                items.get(SLOT_C).shrink(1);
+                items.get(SLOT_D).shrink(1);
+                items.get(SLOT_E).shrink(1);
+            }
+            case TYPE_POLEARM -> {
+                items.get(SLOT_B).shrink(1);
+                items.get(SLOT_F).shrink(1);
+                items.get(SLOT_E).shrink(1);
+            }
         }
-        for (int i : activeIndices()) if (items.get(i).getCount() <= 0) items.set(i, ItemStack.EMPTY);
+        // очищаем ячейки, где количество стало <=0
+        for (int i : activeIndices()) {
+            if (items.get(i).getCount() <= 0) items.set(i, ItemStack.EMPTY);
+        }
         setChanged();
     }
 
-    /** Вызывается из слота OUT при взятии предмета. */
-    public void resetAfterTake(Level lvl) {
-        craftReady = false;
-        progress = 0;
-        // OUT снова пуст до следующего завершения
-        if (!items.get(SLOT_OUT).isEmpty()) items.set(SLOT_OUT, ItemStack.EMPTY);
-        setChanged();
-    }
+//----------------------------------------------------------------------------
+//          Настройка времени и топлива в зависимости от вкладки
+//----------------------------------------------------------------------------
 
-    // ===== прогресс/тайминги =====
-    /** Пересчёт потребности топлива и времени крафта по текущей вкладке. */
     private void recalcFuelNeedAndTime() {
         fuelNeed = switch (currentTypeIdx) {
-            case TYPE_LONG       -> 2;
-            case TYPE_TWO_HANDED -> 3;
+            case TYPE_SHORT      -> 2;
+            case TYPE_POLEARM    -> 2;
+            case TYPE_LONG       -> 3;
+            case TYPE_TWO_HANDED -> 4;
             default              -> 1;
         };
         maxProgress = switch (currentTypeIdx) {
@@ -354,12 +445,14 @@ public class WeaponForgeBlockEntity extends BlockEntity implements MenuProvider 
             case TYPE_POLEARM    -> 120;
             case TYPE_LONG       -> 160;
             case TYPE_TWO_HANDED -> 220;
-            default              -> 140;
+            default              -> 100;
         };
     }
 
-    // ===== save/load =====
-    /** Сохранение состояния в NBT. */
+//------------------------------------------------------
+//          Сохранение и загрузка состояния
+//------------------------------------------------------
+
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -372,7 +465,6 @@ public class WeaponForgeBlockEntity extends BlockEntity implements MenuProvider 
         tag.putBoolean("CraftReady", craftReady);
     }
 
-    /** Загрузка состояния из NBT. */
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -385,23 +477,51 @@ public class WeaponForgeBlockEntity extends BlockEntity implements MenuProvider 
         craftReady = tag.getBoolean("CraftReady");
     }
 
-    // ===== дроп содержимого =====
-    /** Выбрасывает все предметы из инвентаря. */
+//------------------------------------------------------
+//          Дроп содержимого при разрушении
+//------------------------------------------------------
+
+    // Выбрасывает все предметы из инвентаря.
     public void dropAllContents() {
         if (level instanceof ServerLevel sl) {
-            for (ItemStack s : items) if (!s.isEmpty())
-                Containers.dropItemStack(sl, worldPosition.getX()+0.5, worldPosition.getY()+0.5, worldPosition.getZ()+0.5, s);
+            for (ItemStack s : items) {
+                if (!s.isEmpty()) {
+                Containers.dropItemStack(sl,
+                        worldPosition.getX()+0.5,
+                        worldPosition.getY()+0.5,
+                        worldPosition.getZ()+0.5,
+                        s);
+                }
+            }
         }
     }
 
-    /** Выбрасывает накопленное топливо. */
+    // Выбрасывает весь буфер топлива.
     public void dropFuelBuffer() {
         if (!(level instanceof ServerLevel sl)) return;
-        while (fuelCoal-- > 0)
-            Containers.dropItemStack(sl, worldPosition.getX()+0.5, worldPosition.getY()+0.5, worldPosition.getZ()+0.5, new ItemStack(Items.COAL));
+        while (fuelCoal-- > 0) {
+            Containers.dropItemStack(sl,
+                    worldPosition.getX()+0.5,
+                    worldPosition.getY()+0.5,
+                    worldPosition.getZ()+0.5,
+                    new ItemStack(Items.COAL));
+        }
         fuelCoal = 0;
-        while (fuelCharcoal-- > 0)
-            Containers.dropItemStack(sl, worldPosition.getX()+0.5, worldPosition.getY()+0.5, worldPosition.getZ()+0.5, new ItemStack(Items.CHARCOAL));
+        while (fuelCharcoal-- > 0) {
+            Containers.dropItemStack(sl,
+                    worldPosition.getX()+0.5,
+                    worldPosition.getY()+0.5,
+                    worldPosition.getZ()+0.5,
+                    new ItemStack(Items.CHARCOAL));
+        }
         fuelCharcoal = 0;
+    }
+
+    // Сброс состояния при взятии предмета из OUT — вызывается из меню.
+    public void resetAfterTake(Level lvl) {
+        craftReady = false;
+        progress = 0;
+        if (!items.get(SLOT_OUT).isEmpty()) items.set(SLOT_OUT, ItemStack.EMPTY);
+        setChanged();
     }
 }
