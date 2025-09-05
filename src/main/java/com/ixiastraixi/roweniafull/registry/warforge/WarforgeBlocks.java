@@ -3,8 +3,6 @@ package com.ixiastraixi.roweniafull.registry.warforge;
 import com.ixiastraixi.roweniafull.mechanics.warforge.blocks.ArmorForgeBlock;
 import com.ixiastraixi.roweniafull.mechanics.warforge.blocks.WeaponForgeBlock;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -20,8 +18,8 @@ public class WarforgeBlocks {
     public static final RegistryObject<Block> WEAPON_FORGE =
             BLOCKS.register("weapon_forge", WeaponForgeBlock::new);
     // Кузница брони
-    public static final RegistryObject<Block> ARMOR_FORGE = BLOCKS.register("armor_forge",
-            () -> new ArmorForgeBlock(BlockBehaviour.Properties.of().strength(3.5F).sound(SoundType.ANVIL)));
+    public static final RegistryObject<Block> ARMOR_FORGE =
+            BLOCKS.register("armor_forge", ArmorForgeBlock::new);
 
     public static void init(IEventBus bus) {
         BLOCKS.register(bus);

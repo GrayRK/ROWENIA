@@ -25,6 +25,11 @@ import org.jetbrains.annotations.Nullable;
 
 public class WeaponForgeBlock extends Block implements EntityBlock {
 
+//-----------------------------
+//       Конструкторы
+//-----------------------------
+
+    // Конструктор по умолчанию
     public WeaponForgeBlock() {
         super(BlockBehaviour.Properties.of()
                 .strength(1.5F, 6.0F)
@@ -32,10 +37,16 @@ public class WeaponForgeBlock extends Block implements EntityBlock {
                 .requiresCorrectToolForDrops()
         );
     }
+    //Второй конструктор: принимает готовые свойства
     public WeaponForgeBlock(BlockBehaviour.Properties props) {
         super(props.requiresCorrectToolForDrops());
     }
 
+//-----------------------
+//       Логика
+//-----------------------
+
+    // При клике правой кнопкой открываем меню через Forge NetworkHooks.
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                  Player player, InteractionHand hand, BlockHitResult hit) {
@@ -48,7 +59,7 @@ public class WeaponForgeBlock extends Block implements EntityBlock {
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    // дроп всех слотов + буфера топлива при замене/ломании
+    // При замене блока/разрушении сбрасываем инвентарь и буфер топлива
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock())) {
@@ -61,6 +72,7 @@ public class WeaponForgeBlock extends Block implements EntityBlock {
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
+    // При разрушении рукой/инструментом также сбрасываем содержимое
     @Override
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         var be = level.getBlockEntity(pos);
@@ -71,12 +83,16 @@ public class WeaponForgeBlock extends Block implements EntityBlock {
         super.playerWillDestroy(level, pos, state, player);
     }
 
-    @Nullable @Override
+    // Создаём новую block‑entity
+    @Nullable
+    @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new WeaponForgeBlockEntity(pos, state);
     }
 
-    @Nullable @Override
+    // Возвращаем тикер только на сервере и только для нужного типа BE
+    @Nullable
+    @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         if (level.isClientSide) return null;
         return type == WarforgeBlockEntities.WEAPON_FORGE_BE.get()
@@ -84,6 +100,14 @@ public class WeaponForgeBlock extends Block implements EntityBlock {
                 : null;
     }
 
-    @Override public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
-    @Nullable @Override public BlockState getStateForPlacement(BlockPlaceContext ctx) { return super.getStateForPlacement(ctx); }
+    @Override public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.MODEL;
+    }
+
+    // Базовая реализация размещения
+    @Nullable
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext ctx) {
+        return super.getStateForPlacement(ctx);
+    }
 }
