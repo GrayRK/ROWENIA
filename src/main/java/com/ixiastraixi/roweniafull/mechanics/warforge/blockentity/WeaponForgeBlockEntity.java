@@ -46,9 +46,9 @@ public class WeaponForgeBlockEntity extends BlockEntity implements MenuProvider 
     public static final int SLOT_C    = 2; // Лезвие
     public static final int SLOT_D    = 3; // Лезвие
     public static final int SLOT_E    = 4; // Нижняя рукоять
-    public static final int SLOT_F    = 7; // Верхняя рукоять
-    public static final int SLOT_FUEL = 5; // Топливо
-    public static final int SLOT_OUT  = 6; // Выход
+    public static final int SLOT_F    = 5; // Верхняя рукоять
+    public static final int SLOT_FUEL = 6; // Топливо
+    public static final int SLOT_OUT  = 7; // Выход
 
     // --- Параметры крафта ---
     private int  progress          = 0;          // Текущий прогресс

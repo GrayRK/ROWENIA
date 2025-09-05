@@ -5,6 +5,7 @@ import com.ixiastraixi.roweniafull.mechanics.warforge.recipe.ArmorForgingRecipe;
 import com.ixiastraixi.roweniafull.registry.warforge.WarforgeMenus;
 import com.ixiastraixi.roweniafull.registry.warforge.WarforgeRecipes;
 import com.ixiastraixi.roweniafull.registry.warforge.WarforgeTags;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
@@ -12,6 +13,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -19,200 +21,229 @@ import net.minecraft.world.item.Items;
 
 public class ArmorForgeMenu extends AbstractContainerMenu {
 
-    private static final int TAB_HELMET=0, TAB_CHEST=1, TAB_LEGS=2, TAB_BOOTS=3, TAB_SHIELD=4;
+//-------------------------------------------------------------------
+//       Константы: Слоты, Типы, Состояния
+//-------------------------------------------------------------------
 
-    public final ArmorForgeBlockEntity be;
-    public final ContainerData data;
+    // --- Вкладки ---
+    private static final int TAB_HELMET = ArmorForgeBlockEntity.TYPE_HELMET;
+    private static final int TAB_CHEST  = ArmorForgeBlockEntity.TYPE_CHEST;
+    private static final int TAB_LEGS   = ArmorForgeBlockEntity.TYPE_LEGS;
+    private static final int TAB_BOOTS  = ArmorForgeBlockEntity.TYPE_BOOTS;
+    private static final int TAB_SHIELD = ArmorForgeBlockEntity.TYPE_SHIELD;
 
-    // сетка ссылок на слоты по индексам 0..8 для каждой вкладки
+    // --- Индексы слотов ---
+    private static final int IDX_A    = ArmorForgeBlockEntity.SLOT_A;
+    private static final int IDX_B    = ArmorForgeBlockEntity.SLOT_B;
+    private static final int IDX_C    = ArmorForgeBlockEntity.SLOT_C;
+    private static final int IDX_D    = ArmorForgeBlockEntity.SLOT_D;
+    private static final int IDX_E    = ArmorForgeBlockEntity.SLOT_E;
+    private static final int IDX_F    = ArmorForgeBlockEntity.SLOT_F;
+    private static final int IDX_G    = ArmorForgeBlockEntity.SLOT_G;
+    private static final int IDX_H    = ArmorForgeBlockEntity.SLOT_H;
+    private static final int IDX_I    = ArmorForgeBlockEntity.SLOT_I;
+    private static final int IDX_FUEL = ArmorForgeBlockEntity.SLOT_FUEL;
+    private static final int IDX_OUT  = ArmorForgeBlockEntity.SLOT_OUT;
+
+    // --- Инвентарь игрока на текстуре ---
+    private static final int PLAYER_INV_X = 45;
+    private static final int PLAYER_INV_Y = 117;
+
+    private final ArmorForgeBlockEntity be;
+    private final ContainerData data;
+
+    // Сетка слотов по индексам и вкладкам. v[beIndex][tab] — ссылка на
+    // PositionedSlot для данного входного beIndex и вкладки (helmet..shield).
     private final PositionedSlot[][] v = new PositionedSlot[9][5];
-
-    // fuel / out / preview
     private PositionedSlot fuel;
-    private ResultSlot out;
+    private ResultSlot     out;
+
+    // Предпросмотр: отдельный контейнер, показывающий призрачный результат.
     private final SimpleContainer previewCont = new SimpleContainer(1);
     private PreviewSlot preview;
-    private long lastPreviewFP = 0L;
+    private int previewMenuIdx = -1;
+    private long lastPreviewFP = Long.MIN_VALUE;
 
-    // индексы игрока для moveItemStackTo
-    private int playerStartIdx, playerEndIdx;
-    private int fuelMenuIdx;
+    // Номера слотов для быстрого перемещения
+    private int fuelMenuIdx    = -1;
+    private int playerStartIdx =  0;
+    private int playerEndIdx   =  0;
+    private int cachedTypeIdx  = -1;
 
+
+    //Основной конструктор, вызываемый на сервере.
     public ArmorForgeMenu(int id, Inventory inv, ArmorForgeBlockEntity be, ContainerData data) {
         super(WarforgeMenus.ARMOR_FORGE_MENU.get(), id);
-        this.be = be;
+        this.be   = be;
         this.data = data;
 
+        // привязываем dataSlots, чтобы клиент видел прогресс/топливо/тип
+        addDataSlots(data);
         Container cont = be.container();
 
-        // общие слоты
-        fuel = addFuelSlot(cont, ArmorForgeBlockEntity.SLOT_FUEL, 218, 16); fuelMenuIdx = this.slots.size()-1;
-        out  = addResultSlot(cont, ArmorForgeBlockEntity.SLOT_OUT, 114, 61, be);
+//-----------------------------------
+//       Размещение слотов
+//-----------------------------------
+
+        // --- Фиксированные слоты ---
+        fuel = addFuelSlot(cont, IDX_FUEL, 218, 16);
+        fuelMenuIdx = this.slots.size() - 1;
+        out  = addResultSlot(cont, IDX_OUT, 114, 61, be);
         preview = addPreviewSlot(previewCont, 0, 189, 16);
 
-        // --- входные слоты по вкладкам (каждый slot привязываем к tab) ---
-        // HELMET: 0,1,2,3,5
-        v[0][TAB_HELMET] = addInputSlot(cont, 0, 27, 39, TAB_HELMET);
-        v[1][TAB_HELMET] = addInputSlot(cont, 1, 45, 39, TAB_HELMET);
-        v[2][TAB_HELMET] = addInputSlot(cont, 2, 63, 39, TAB_HELMET);
-        v[3][TAB_HELMET] = addInputSlot(cont, 3, 27, 57, TAB_HELMET);
-        v[5][TAB_HELMET] = addInputSlot(cont, 5, 63, 57, TAB_HELMET);
+        // --- входные ячейки по вкладкам ---
+        // HELMET:
+        v[IDX_A][TAB_HELMET] = addInputSlot(cont, IDX_A, 27, 39);
+        v[IDX_B][TAB_HELMET] = addInputSlot(cont, IDX_B, 45, 39);
+        v[IDX_C][TAB_HELMET] = addInputSlot(cont, IDX_C, 63, 39);
+        v[IDX_D][TAB_HELMET] = addInputSlot(cont, IDX_D, 27, 57);
+        v[IDX_F][TAB_HELMET] = addInputSlot(cont, IDX_F, 63, 57);
 
-        // CHEST: 0,2,3,4,5,6,7,8
-        v[0][TAB_CHEST] = addInputSlot(cont, 0, 27, 39, TAB_CHEST);
-        v[2][TAB_CHEST] = addInputSlot(cont, 2, 63, 39, TAB_CHEST);
-        v[3][TAB_CHEST] = addInputSlot(cont, 3, 27, 57, TAB_CHEST);
-        v[4][TAB_CHEST] = addInputSlot(cont, 4, 45, 57, TAB_CHEST);
-        v[5][TAB_CHEST] = addInputSlot(cont, 5, 63, 57, TAB_CHEST);
-        v[6][TAB_CHEST] = addInputSlot(cont, 6, 27, 75, TAB_CHEST);
-        v[7][TAB_CHEST] = addInputSlot(cont, 7, 45, 75, TAB_CHEST);
-        v[8][TAB_CHEST] = addInputSlot(cont, 8, 63, 75, TAB_CHEST);
+        // CHEST:
+        v[IDX_A][TAB_CHEST] = addInputSlot(cont, IDX_A, 27, 39);
+        v[IDX_C][TAB_CHEST] = addInputSlot(cont, IDX_C, 63, 39);
+        v[IDX_D][TAB_CHEST] = addInputSlot(cont, IDX_D, 27, 57);
+        v[IDX_E][TAB_CHEST] = addInputSlot(cont, IDX_E, 45, 57);
+        v[IDX_F][TAB_CHEST] = addInputSlot(cont, IDX_F, 63, 57);
+        v[IDX_G][TAB_CHEST] = addInputSlot(cont, IDX_G, 27, 75);
+        v[IDX_H][TAB_CHEST] = addInputSlot(cont, IDX_H, 45, 75);
+        v[IDX_I][TAB_CHEST] = addInputSlot(cont, IDX_I, 63, 75);
 
-        // LEGS: 0,1,2,3,5,6,8
-        v[0][TAB_LEGS] = addInputSlot(cont, 0, 27, 39, TAB_LEGS);
-        v[1][TAB_LEGS] = addInputSlot(cont, 1, 45, 39, TAB_LEGS);
-        v[2][TAB_LEGS] = addInputSlot(cont, 2, 63, 39, TAB_LEGS);
-        v[3][TAB_LEGS] = addInputSlot(cont, 3, 27, 57, TAB_LEGS);
-        v[5][TAB_LEGS] = addInputSlot(cont, 5, 63, 57, TAB_LEGS);
-        v[6][TAB_LEGS] = addInputSlot(cont, 6, 27, 75, TAB_LEGS);
-        v[8][TAB_LEGS] = addInputSlot(cont, 8, 63, 75, TAB_LEGS);
+        // LEGS:
+        v[IDX_A][TAB_LEGS] = addInputSlot(cont, IDX_A, 27, 39);
+        v[IDX_B][TAB_LEGS] = addInputSlot(cont, IDX_B, 45, 39);
+        v[IDX_C][TAB_LEGS] = addInputSlot(cont, IDX_C, 63, 39);
+        v[IDX_D][TAB_LEGS] = addInputSlot(cont, IDX_D, 27, 57);
+        v[IDX_F][TAB_LEGS] = addInputSlot(cont, IDX_F, 63, 57);
+        v[IDX_G][TAB_LEGS] = addInputSlot(cont, IDX_G, 27, 75);
+        v[IDX_I][TAB_LEGS] = addInputSlot(cont, IDX_I, 63, 75);
 
-        // BOOTS: 3,5,6,8
-        v[3][TAB_BOOTS] = addInputSlot(cont, 3, 27, 57, TAB_BOOTS);
-        v[5][TAB_BOOTS] = addInputSlot(cont, 5, 63, 57, TAB_BOOTS);
-        v[6][TAB_BOOTS] = addInputSlot(cont, 6, 27, 75, TAB_BOOTS);
-        v[8][TAB_BOOTS] = addInputSlot(cont, 8, 63, 75, TAB_BOOTS);
+        // BOOTS:
+        v[IDX_D][TAB_BOOTS] = addInputSlot(cont, IDX_D, 27, 57);
+        v[IDX_F][TAB_BOOTS] = addInputSlot(cont, IDX_F, 63, 57);
+        v[IDX_G][TAB_BOOTS] = addInputSlot(cont, IDX_G, 27, 75);
+        v[IDX_I][TAB_BOOTS] = addInputSlot(cont, IDX_I, 63, 75);
 
-        // SHIELD: 0,1,2,3,4,5,7
-        v[0][TAB_SHIELD] = addInputSlot(cont, 0, 27, 39, TAB_SHIELD);
-        v[1][TAB_SHIELD] = addInputSlot(cont, 1, 45, 39, TAB_SHIELD);
-        v[2][TAB_SHIELD] = addInputSlot(cont, 2, 63, 39, TAB_SHIELD);
-        v[3][TAB_SHIELD] = addInputSlot(cont, 3, 27, 57, TAB_SHIELD);
-        v[4][TAB_SHIELD] = addInputSlot(cont, 4, 45, 57, TAB_SHIELD);
-        v[5][TAB_SHIELD] = addInputSlot(cont, 5, 63, 57, TAB_SHIELD);
-        v[7][TAB_SHIELD] = addInputSlot(cont, 7, 45, 75, TAB_SHIELD);
+        // SHIELD:
+        v[IDX_A][TAB_SHIELD] = addInputSlot(cont, IDX_A, 27, 39);
+        v[IDX_B][TAB_SHIELD] = addInputSlot(cont, IDX_B, 45, 39);
+        v[IDX_C][TAB_SHIELD] = addInputSlot(cont, IDX_C, 63, 39);
+        v[IDX_D][TAB_SHIELD] = addInputSlot(cont, IDX_D, 27, 57);
+        v[IDX_E][TAB_SHIELD] = addInputSlot(cont, IDX_E, 45, 57);
+        v[IDX_F][TAB_SHIELD] = addInputSlot(cont, IDX_F, 63, 57);
+        v[IDX_H][TAB_SHIELD] = addInputSlot(cont, IDX_H, 45, 75);
 
-        // инвентарь игрока
+        // Инвентарь игрока
         playerStartIdx = this.slots.size();
-        addPlayerInventory(inv, 45, 117);
+        // Инвентарь
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 9; col++) {
+                addSlot(new Slot(inv,
+                        col + row * 9 + 9,
+                        PLAYER_INV_X + col * 18,
+                        PLAYER_INV_Y + row * 18));
+            }
+        }
+        // Хотбар
+        for (int col = 0; col < 9; col++) {
+            addSlot(new Slot(inv,
+                    col,
+                    PLAYER_INV_X + col * 18,
+                    PLAYER_INV_Y + 58));
+        }
         playerEndIdx = this.slots.size();
 
-        addDataSlots(data);
-        applyLayout(currentTabIdx());
+        // Применяем раскладку для начальной вкладки
+        applyLayout(currentTypeIdx());
+
+        // Первичный расчёт предпросмотра на сервере: на клиенте синхра через broadcastChanges
+        if (!inv.player.level().isClientSide) recalcPreviewServer();
     }
 
-    private int currentTabIdx() { return data.get(4); }
-
-    private void addPlayerInventory(Inventory inv, int x, int y) {
-        for (int r=0;r<3;r++) for (int c=0;c<9;c++) addSlot(new Slot(inv, c + r*9 + 9, x + c*18, y + r*18));
-        for (int c=0;c<9;c++) addSlot(new Slot(inv, c, x + c*18, y + 58));
+    // Клиентский конструктор
+    public ArmorForgeMenu(int id, Inventory inv, FriendlyByteBuf buf) {
+        this(id, inv,
+                (ArmorForgeBlockEntity) inv.player.level().getBlockEntity(buf.readBlockPos()),
+                new SimpleContainerData(5));
     }
 
-    private PositionedSlot addInputSlot(Container cont, int beIndex, int x, int y, int tab) {
-        PositionedSlot s = new PositionedSlot(cont, beIndex, beIndex, x, y);
-        s.tab = tab;
-        addSlot(s); s.menuIndex = this.slots.size()-1;
-        return s;
-    }
-
-    private class FuelSlot extends PositionedSlot {
-        public FuelSlot(Container cont, int beIndex, int index, int x, int y) {
-            super(cont, beIndex, index, x, y);
-        }
-        @Override public boolean isActive() { return true; } // ← ВСЕГДА видим
-        @Override public boolean mayPlace(ItemStack st) {
-            return st.is(Items.COAL) || st.is(Items.CHARCOAL);
-        }
-    }
-
-    private PositionedSlot addFuelSlot(Container cont, int beIndex, int x, int y) {
-        FuelSlot s = new FuelSlot(cont, beIndex, beIndex, x, y);
-        addSlot(s);
-        s.menuIndex = this.slots.size() - 1;
-        return s;
-    }
-
-    private ResultSlot addResultSlot(Container cont, int beIndex, int x, int y, ArmorForgeBlockEntity be) {
-        ResultSlot s = new ResultSlot(cont, beIndex, x, y, be);
-        addSlot(s); s.menuIndex = this.slots.size()-1;
-        return s;
-    }
-
-    private PreviewSlot addPreviewSlot(SimpleContainer cont, int index, int x, int y) {
-        PreviewSlot s = new PreviewSlot(cont, index, x, y);
-        addSlot(s); s.menuIndex = this.slots.size()-1;
-        return s;
-    }
-
-    // --- сервер: обработка "кнопок" от экрана ---
     @Override
-    public boolean clickMenuButton(Player player, int id) {
-        if (player.level().isClientSide) return true;
-
-        switch (id) {
-            case 0 -> { returnInputsToPlayer(player); be.prevTab(); } // prev
-            case 1 -> { returnInputsToPlayer(player); be.nextTab(); } // next
-            case 2 -> be.setHoldingCraft(true);                       // hold start
-            case 3 -> be.setHoldingCraft(false);                      // hold stop
-            default -> {}
-        }
-
-        // мгновенно синкаем вкладку клиенту (и применяем раскладку)
-        int t = be.currentTabIdx();
-        data.set(4, t);
-        applyLayout(t);
-        broadcastChanges();
-        return true;
+    public boolean stillValid(Player player) {
+        return be.container().stillValid(player);
     }
 
-    // --- раскладка слотов: включаем только текущую вкладку ---
-    private void applyLayout(int t) {
-        if (fuel != null) fuel.setActive(true);
-        if (out  != null) out.setActive(true);
-        for (int i=0;i<v.length;i++)
-            for (int tab=0; tab<5; tab++)
-                if (v[i][tab]!=null)
-                    v[i][tab].setActive(tab == t);
+    // === Методы для экрана ===
+    public Container machineContainer() { return be.container(); }
+    public int outMenuIndex() { return (out != null ? out.menuIndex : -1); }
+    public int previewMenuIndex() { return previewMenuIdx; }
+
+    public int progress()       { return data.get(0); }
+    public int maxProgress()    { return data.get(1); }
+    public int fuelStored()     { return data.get(2); } // 0..4
+    public int fuelNeed()       { return data.get(3); }
+    public int currentTypeIdx() { return data.get(4); }
+
+
+     // Серверный пересчёт предпросмотра и рассылка изменений. Вызывается каждый тик,
+     // когда клиент запрашивает broadcastChanges(), а также в нашем override.
+    @Override
+    public void broadcastChanges() {
+        recalcPreviewServer();
+        super.broadcastChanges();
     }
 
-    // --- превью (клиент): собираем снапшот из СЛОТОВ МЕНЮ, а не BE ---
-    public void refreshLayoutIfNeeded() {
-        int t = currentTabIdx();
-        applyLayout(t);
-
-        // если OUT занят — предосмотр не рисуем
-        if (out != null && this.slots.get(out.menuIndex).hasItem()) {
-            previewCont.setItem(0, ItemStack.EMPTY);
-            lastPreviewFP = -1L;
+    private void recalcPreviewServer() {
+        if (be.getLevel() == null || be.getLevel().isClientSide) return;
+        if (!be.container().getItem(IDX_OUT).isEmpty()) {
+            if (!previewCont.getItem(0).isEmpty()) {
+                previewCont.setItem(0, ItemStack.EMPTY);
+            }
+            lastPreviewFP = Long.MIN_VALUE;
             return;
         }
-
-        var cl = net.minecraft.client.Minecraft.getInstance().level;
-        if (cl == null) return;
-
         long fp = previewFingerprint();
         if (fp == lastPreviewFP) return;
         lastPreviewFP = fp;
 
-        SimpleContainer snap = activeSnapshotFromMenu();
+        // Рассчитываем результат по активным слотам текущей вкладки
+        SimpleContainer snap = activeSnapshot(currentTypeIdx());
         ItemStack outStack = ItemStack.EMPTY;
-
-        var rm = cl.getRecipeManager();
-        for (var r : rm.getAllRecipesFor(WarforgeRecipes.ARMOR_FORGING_TYPE.get())) {
-            if (r.form().ordinal() == t && r.matches(snap, cl)) {
-                outStack = r.assemble(snap, cl.registryAccess());
-                break;
+        for (ArmorForgingRecipe r : ((ServerLevel) be.getLevel())
+                .getRecipeManager().getAllRecipesFor(WarforgeRecipes.ARMOR_FORGING_TYPE.get())) {
+            if (r.form().ordinal() == currentTypeIdx() && r.matches(snap, be.getLevel())) {
+                ItemStack res = r.assemble(snap, be.getLevel().registryAccess());
+                if (!res.isEmpty()) { outStack = res; break; }
             }
         }
         previewCont.setItem(0, outStack);
     }
 
-    private SimpleContainer activeSnapshotFromMenu() {
-        SimpleContainer snap = new SimpleContainer(9);
-        int tab = currentTabIdx();
+    // Вычисляет хэш предпросмотра для сравнения с предыдущим состоянием.
+    // Включает предметы и количество в активных ячейках и текущую вкладку.
+    private long previewFingerprint() {
+        long h = 1469598103934665603L;
+        int t = currentTypeIdx();
+        int[] act = activeIndices(t);
+        for (int idx : act) {
+            PositionedSlot ps = v[idx][t];
+            ItemStack s = (ps != null && ps.menuIndex >= 0 && ps.menuIndex < this.slots.size())
+                    ? this.slots.get(ps.menuIndex).getItem()
+                    : ItemStack.EMPTY;
+            int id = s.isEmpty() ? -1 : Item.getId(s.getItem());
+            int c  = s.isEmpty() ? 0  : s.getCount();
+            h ^= (id * 1099511628211L) ^ (c * 1469598103934665603L);
+            h *= 1099511628211L;
+        }
+        h ^= (long) t * 0x9E3779B97F4A7C15L;
+        return h;
+    }
+
+    // Создаёт снимок активных ячеек. Возвращает контейнер размером 11 (как у BE),
+    // где заполнены только активные позиции текущей вкладки. Остальные пусты.
+    private SimpleContainer activeSnapshot(int tab) {
+        SimpleContainer snap = new SimpleContainer(11);
         int[] act = activeIndices(tab);
-        for (int i=0;i<9;i++) snap.setItem(i, ItemStack.EMPTY);
-        for (int idx: act) {
+        for (int idx : act) {
             PositionedSlot ps = v[idx][tab];
             ItemStack st = ItemStack.EMPTY;
             if (ps != null && ps.menuIndex >= 0 && ps.menuIndex < this.slots.size()) {
@@ -223,152 +254,254 @@ public class ArmorForgeMenu extends AbstractContainerMenu {
         return snap;
     }
 
-    private long previewFingerprint() {
-        long h = 1469598103934665603L;
-        int tab = currentTabIdx();
-        int[] act = activeIndices(tab);
-        for (int idx: act) {
-            PositionedSlot ps = v[idx][tab];
-            ItemStack s = (ps != null && ps.menuIndex >= 0 && ps.menuIndex < this.slots.size())
-                    ? this.slots.get(ps.menuIndex).getItem()
-                    : ItemStack.EMPTY;
-            int id = s.isEmpty()? -1 : net.minecraft.world.item.Item.getId(s.getItem());
-            int c  = s.isEmpty()? 0  : s.getCount();
-            h ^= (id * 1099511628211L) ^ (c * 1469598103934665603L);
-            h *= 1099511628211L;
-        }
-        h ^= tab * 0x9E3779B97F4A7C15L;
-        return h;
-    }
-
+    // Возвращает список активных индексов для заданной вкладки. Эти же массивы
+    // используются в ArmorForgeBlockEntity.consumeInputsForCurrentTab().
     private static int[] activeIndices(int tab) {
         return switch (tab) {
-            case TAB_HELMET -> new int[]{0,1,2,3,5};
-            case TAB_CHEST  -> new int[]{0,2,3,4,5,6,7,8};
-            case TAB_LEGS   -> new int[]{0,1,2,3,5,6,8};
-            case TAB_BOOTS  -> new int[]{3,5,6,8};
-            case TAB_SHIELD -> new int[]{0,1,2,3,4,5,7};
-            default -> new int[]{0};
+            case TAB_HELMET -> new int[]{ IDX_A, IDX_B, IDX_C, IDX_D, IDX_F };
+            case TAB_CHEST  -> new int[]{ IDX_A, IDX_C, IDX_D, IDX_E, IDX_F, IDX_G, IDX_H, IDX_I };
+            case TAB_LEGS   -> new int[]{ IDX_A, IDX_B, IDX_C, IDX_D, IDX_F, IDX_G, IDX_I };
+            case TAB_BOOTS  -> new int[]{ IDX_D, IDX_F, IDX_G, IDX_I };
+            case TAB_SHIELD -> new int[]{ IDX_A, IDX_B, IDX_C, IDX_D, IDX_E, IDX_F, IDX_H };
+            default -> new int[]{ IDX_A };
         };
     }
 
-    // --- жизненный цикл меню ---
-    @Override public void removed(Player player) {
+//-------------------------------------------------------
+//       Обработка кнопок, закрытие, Shift‑клики
+//-------------------------------------------------------
+
+    // ===== кнопки/закрытие =====
+    @Override
+    public void removed(Player player) {
         super.removed(player);
         be.setHoldingCraft(false);
         returnInputsToPlayer(player);
     }
 
-    @Override public boolean stillValid(Player player) {
-        return be.container().stillValid(player);
+     //id: 0=prev, 1=next, 2=hold‑start, 3=hold‑stop
+    @Override
+    public boolean clickMenuButton(Player player, int id) {
+        if (player.level().isClientSide) return true;
+        switch (id) {
+            case 0 -> { returnInputsToPlayer(player); be.prevType(); }
+            case 1 -> { returnInputsToPlayer(player); be.nextType(); }
+            case 2 -> be.setHoldingCraft(true);
+            case 3 -> be.setHoldingCraft(false);
+            default -> {}
+        }
+        // синхронизируем вкладку и применяем раскладку
+        applyLayout(currentTypeIdx());
+        return true;
     }
 
-    // --- Shift-клики и возврат входов ---
+    // ===== Shift+ПКМ =====
     @Override
     public ItemStack quickMoveStack(Player player, int slotIdx) {
         Slot clicked = this.slots.get(slotIdx);
         if (clicked == null || !clicked.hasItem()) return ItemStack.EMPTY;
 
+        // --- Shift‑клик из OUT ---
         if (clicked == out) {
+            // Выдаём результат только если крафт готов
+            if (!be.isCraftReady()) return ItemStack.EMPTY;
             ItemStack stack = clicked.getItem();
-            if (stack.isEmpty()) return ItemStack.EMPTY;
-            ItemStack ret = stack.copy();
-            if (!moveItemStackTo(stack, playerStartIdx, playerEndIdx, true)) return ItemStack.EMPTY;
+            ItemStack ret   = stack.copy();
+            // Перемещаем в инвентарь игрока
+            if (!moveItemStackTo(stack, playerStartIdx, playerEndIdx, true)) {
+                return ItemStack.EMPTY;
+            }
+            // сообщаем слоту, что предмет взят (спишутся ингредиенты, сбросится craftReady)
             clicked.onTake(player, ret.copy());
-            if (stack.isEmpty()) clicked.set(ItemStack.EMPTY); else clicked.setChanged();
+            // обновляем слот OUT
+            if (stack.isEmpty()) clicked.set(ItemStack.EMPTY);
+            else clicked.setChanged();
             return ret;
         }
 
+        // --- Shift‑клик ---
         ItemStack stack = clicked.getItem();
         ItemStack ret   = stack.copy();
         boolean fromPlayer = slotIdx >= playerStartIdx && slotIdx < playerEndIdx;
-
         if (fromPlayer) {
+            // Из инвентаря игрока в блок
             if (isFuelItem(stack.getItem())) {
-                if (!moveItemStackTo(stack, fuelMenuIdx, fuelMenuIdx+1, false)) return ItemStack.EMPTY;
+                if (!moveItemStackTo(stack, fuelMenuIdx, fuelMenuIdx + 1, false))
+                    return ItemStack.EMPTY;
             } else {
                 if (!moveToActiveInputs(stack)) return ItemStack.EMPTY;
             }
         } else {
-            if (!moveItemStackTo(stack, playerStartIdx, playerEndIdx, true)) return ItemStack.EMPTY;
+            // Из блока (кроме OUT) в инвентарь игрока
+            if (!moveItemStackTo(stack, playerStartIdx, playerEndIdx, true))
+                return ItemStack.EMPTY;
         }
 
-        if (stack.isEmpty()) clicked.set(ItemStack.EMPTY); else clicked.setChanged();
+        if (stack.isEmpty()) clicked.set(ItemStack.EMPTY);
+        else clicked.setChanged();
         return ret;
     }
 
-    private boolean isFuelItem(Item it) { return it == Items.COAL || it == Items.CHARCOAL; }
+    // Проверяет, подходит ли предмет в качестве топлива.
+    private boolean isFuelItem(Item it) {
+        return it == Items.COAL || it == Items.CHARCOAL;
+    }
 
+    // Перекладывает предмет из инвентаря игрока в первую подходящую активную ячейку
+    // текущей вкладки. Возвращает true, если удалось (или предмет опустошён).
     private boolean moveToActiveInputs(ItemStack stack) {
-        int t = currentTabIdx();
-        for (int i=0;i<v.length;i++) if (v[i][t]!=null && v[i][t].isActive() && v[i][t].mayPlace(stack)) {
-            if (moveItemStackTo(stack, v[i][t].menuIndex, v[i][t].menuIndex+1, false)) return true;
+        int t = currentTypeIdx();
+        int[] order = activeIndices(t);
+        for (int beIdx : order) {
+            PositionedSlot s = v[beIdx][t];
+            if (s != null && s.isActive()) {
+                int mi = s.menuIndex;
+                if (moveItemStackTo(stack, mi, mi + 1, false) && stack.isEmpty())
+                    return true;
+            }
         }
-        return false;
+        return stack.isEmpty();
     }
 
+    // Возвращает все входы игроку при переключении вкладки. Если не помещается в
+    // инвентарь — бросает предмет на землю.
     private void returnInputsToPlayer(Player player) {
-        for (int i=0;i<v.length;i++) for (int t=0;t<5;t++) {
-            PositionedSlot s = v[i][t]; if (s==null) continue;
-            Slot slot = this.slots.get(s.menuIndex);
-            if (slot.hasItem()) this.moveItemStackTo(slot.getItem(), playerStartIdx, playerEndIdx, false);
+        int t = currentTypeIdx();
+        // перебираем все возможные входные индексы (0..8)
+        for (int beIdx = 0; beIdx < 9; beIdx++) {
+            PositionedSlot s = v[beIdx][t];
+            if (s == null) continue;
+            ItemStack st = s.getItem();
+            if (st.isEmpty()) continue;
+            ItemStack copy = st.copy();
+            // пытаемся переложить в инвентарь игрока
+            if (moveItemStackTo(copy, playerStartIdx, playerEndIdx, true)) {
+                s.set(ItemStack.EMPTY);
+                s.setChanged();
+            } else {
+                // нет места — дропаем на землю
+                player.drop(st.copy(), false);
+                s.set(ItemStack.EMPTY);
+                s.setChanged();
+            }
         }
     }
 
-    // --- слоты ---
+    // Применяет раскладку: включает слоты текущей вкладки и выключает остальные.
+    // Также всегда оставляет видимыми fuel и out.
+    public void refreshLayoutIfNeeded() {
+        int t = currentTypeIdx();
+        if (t != cachedTypeIdx) applyLayout(t);
+    }
 
-    /** НЕ static — чтобы видеть currentTabIdx() у внешнего меню */
-    private class PositionedSlot extends Slot {
+    private void applyLayout(int t) {
+        cachedTypeIdx = t;
+        // fuel и out всегда видимы
+        if (fuel != null) fuel.setActive(true);
+        if (out  != null) out.setActive(true);
+        // выключаем все входные
+        for (int i = 0; i < v.length; i++) {
+            for (int tab = 0; tab < v[i].length; tab++) {
+                if (v[i][tab] != null) v[i][tab].setActive(false);
+            }
+        }
+        // включаем активные для текущей вкладки
+        for (int i = 0; i < v.length; i++) {
+            if (v[i][t] != null) v[i][t].setActive(true);
+        }
+    }
+
+    // Добавляет ячейку входа. beIndex — индекс ячейки в блок‑сущности, x/y — координаты.
+    private PositionedSlot addInputSlot(Container cont, int beIndex, int x, int y) {
+        PositionedSlot s = new PositionedSlot(cont, beIndex, beIndex, x, y);
+        addSlot(s);
+        s.menuIndex = this.slots.size() - 1;
+        return s;
+    }
+
+    // Добавляет ячейку топлива. Разрешает класть только уголь/древесный уголь.
+    private PositionedSlot addFuelSlot(Container cont, int beIndex, int x, int y) {
+        FuelSlot s = new FuelSlot(cont, beIndex, beIndex, x, y);
+        addSlot(s);
+        s.menuIndex = this.slots.size() - 1;
+        return s;
+    }
+
+    // Добавляет ячейку выхода. Доступ к ней ограничивается готовностью крафта.
+    private ResultSlot addResultSlot(Container cont, int beIndex, int x, int y, ArmorForgeBlockEntity be) {
+        ResultSlot s = new ResultSlot(cont, beIndex, x, y, be);
+        addSlot(s);
+        s.menuIndex = this.slots.size() - 1;
+        return s;
+    }
+
+    // Добавляет ячейку предпросмотра (только для отображения, нельзя класть/забирать).
+    private PreviewSlot addPreviewSlot(SimpleContainer cont, int index, int x, int y) {
+        PreviewSlot s = new PreviewSlot(cont, index, x, y);
+        addSlot(s);
+        previewMenuIdx = this.slots.size() - 1;
+        return s;
+    }
+
+
+    // ==== слоты ====
+    private static class PositionedSlot extends Slot {
         private boolean active = true;
         int menuIndex = -1;
-        final int beIndex;
-        int tab = -1; // вкладка-владелец
+        private final int beIndex;
 
         public PositionedSlot(Container cont, int beIndex, int index, int x, int y) {
             super(cont, index, x, y);
             this.beIndex = beIndex;
         }
-
         public PositionedSlot setActive(boolean v) { this.active = v; return this; }
+        @Override public boolean isActive() { return active; }
 
-        @Override public boolean isActive() {
-            return active && (tab == ArmorForgeMenu.this.currentTabIdx());
+        @Override
+        public boolean mayPlace(ItemStack stack) {
+            if (!active) return false;
+            return stack.is(WarforgeTags.ARMOR_PLATE);
         }
+        @Override public boolean mayPickup(Player p) { return active && super.mayPickup(p); }
+    }
 
-        @Override public boolean mayPlace(ItemStack s) {
-            return isActive() && s.is(WarforgeTags.ARMOR_PLATE);
+    //Слот топлива. Активен всегда, но ограничивает кладку углём.
+    private static class FuelSlot extends PositionedSlot {
+        public FuelSlot(Container cont, int beIndex, int index, int x, int y) {
+            super(cont, beIndex, index, x, y);
         }
-
-        @Override public boolean mayPickup(Player p) {
-            return isActive() && super.mayPickup(p);
+        @Override public boolean isActive() { return true; }
+        @Override public boolean mayPlace(ItemStack st) {
+            return st.is(Items.COAL) || st.is(Items.CHARCOAL);
         }
     }
 
+    //Выход
     private static class ResultSlot extends Slot {
         private final ArmorForgeBlockEntity be;
         private boolean active = true;
         int menuIndex = -1;
 
+        public ResultSlot setActive(boolean v) { this.active = v; return this; }
+        @Override public boolean isActive() { return active; }
+
         public ResultSlot(Container cont, int index, int x, int y, ArmorForgeBlockEntity be) {
             super(cont, index, x, y);
             this.be = be;
         }
-
-        public ResultSlot setActive(boolean v) { this.active = v; return this; }
-        @Override public boolean isActive() { return active; }
-
         @Override public boolean mayPlace(ItemStack s) { return false; }
-        @Override public boolean mayPickup(Player p) { return active && super.mayPickup(p); }
+        @Override public boolean mayPickup(Player p) { return active && be.isCraftReady() && super.mayPickup(p); }
 
-        @Override public void onTake(Player p, ItemStack taken) {
+        @Override
+        public void onTake(Player p, ItemStack taken) {
             be.resetAfterTake(p.level());
             super.onTake(p, taken);
         }
     }
 
+    //Слот предпросмотра
     private static class PreviewSlot extends Slot {
-        int menuIndex = -1;
-        public PreviewSlot(SimpleContainer cont, int index, int x, int y) { super(cont, index, x, y); }
+        public PreviewSlot(Container cont, int index, int x, int y) { super(cont, index, x, y); }
         @Override public boolean mayPlace(ItemStack s) { return false; }
         @Override public boolean mayPickup(Player p) { return false; }
     }
