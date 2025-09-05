@@ -1,6 +1,5 @@
 package com.ixiastraixi.roweniafull.mechanics.warforge.menu;
 
-import com.ixiastraixi.roweniafull.mechanics.warforge.blockentity.ArmorForgeBlockEntity;
 import com.ixiastraixi.roweniafull.mechanics.warforge.blockentity.WeaponForgeBlockEntity;
 import com.ixiastraixi.roweniafull.mechanics.warforge.recipe.WeaponForgingRecipe;
 import com.ixiastraixi.roweniafull.registry.warforge.WarforgeMenus;
