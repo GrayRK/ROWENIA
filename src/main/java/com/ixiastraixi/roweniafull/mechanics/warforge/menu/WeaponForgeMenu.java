@@ -89,7 +89,7 @@ public class WeaponForgeMenu extends AbstractContainerMenu {
 //-----------------------------------
 
         // --- Фиксированные слоты ---
-        fuel = addInputSlot(cont, IDX_FUEL, 240, 225);
+        fuel = addFuelSlot(cont, IDX_FUEL, 240, 225);
         fuelMenuIdx = this.slots.size() - 1;
         out  = addResultSlot(cont, IDX_OUT, 185, 83, be);
         preview = addPreviewSlot(previewCont, 0, 240, 95);
@@ -349,8 +349,8 @@ public class WeaponForgeMenu extends AbstractContainerMenu {
     private void returnInputsToPlayer(Player player) {
         int t = currentTypeIdx();
         // перебираем все возможные входные индексы (0..8)
-        for (int beIdx = 0; beIdx < 9; beIdx++) {
-            WeaponForgeMenu.PositionedSlot s = v[beIdx][t];
+        for (int beIdx = 0; beIdx < v.length; beIdx++) {
+            PositionedSlot s = v[beIdx][t];
             if (s == null) continue;
             ItemStack st = s.getItem();
             if (st.isEmpty()) continue;

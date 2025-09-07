@@ -368,7 +368,7 @@ public class ArmorForgeMenu extends AbstractContainerMenu {
     private void returnInputsToPlayer(Player player) {
         int t = currentTypeIdx();
         // перебираем все возможные входные индексы (0..8)
-        for (int beIdx = 0; beIdx < 9; beIdx++) {
+        for (int beIdx = 0; beIdx < v.length; beIdx++) {
             PositionedSlot s = v[beIdx][t];
             if (s == null) continue;
             ItemStack st = s.getItem();

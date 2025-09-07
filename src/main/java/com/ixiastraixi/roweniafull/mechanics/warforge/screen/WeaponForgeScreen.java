@@ -87,7 +87,7 @@ public class WeaponForgeScreen extends AbstractContainerScreen<WeaponForgeMenu> 
 
     // Наковальня анимация
     private static final int FORGE_X =145; // На какую X устанавливаем наковальню в GUI
-    private static final int FORGE_Y =36; // На какую Y устанавливаем наковальню в GUI
+    private static final int FORGE_Y =36; // На какую Y устанавливаем наковальню в GU                   I
     private static final int FORGE_W =86; // Ширина кадра на текстуре для анимации
     private static final int FORGE_H =90; // Высота кадра на текстуре для анимации
     private static final int HAMMER_SPEED_TICKS = 6; // Скорость анимации в тиках

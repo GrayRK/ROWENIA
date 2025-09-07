@@ -1,7 +1,7 @@
 package com.ixiastraixi.roweniafull.mechanics.warforge.recipe;
 
 import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
+import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
@@ -14,258 +14,215 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.Nullable;
 
-import static com.ixiastraixi.roweniafull.registry.warforge.WarforgeRecipes.WEAPON_FORGING_SERIALIZER;
-import static com.ixiastraixi.roweniafull.registry.warforge.WarforgeRecipes.WEAPON_FORGING_TYPE;
+import java.util.Optional;
 
+/**
+ * Рецепт ковки оружия для Warforge. Полностью аналогичен ArmorForgingRecipe,
+ * но использует шесть именованных ингредиентов и собственные формы.
+ */
 public class WeaponForgingRecipe implements Recipe<Container> {
 
-//-------------------------------------------------------
-//       Объявление и привязка слотов к рецепту
-//-------------------------------------------------------
-
+    /** Возможные формы (вкладки) кузницы оружия. */
     public enum Form { SHORT, LONG, TWO_HANDED, POLEARM }
 
     private final ResourceLocation id;
     private final Form form;
     private final ItemStack result;
 
-    private final Ingredient m0;     // A (LONG/TWO)
-    private final Ingredient m1;      // B (SHORT/POLEARM)
-    private final Ingredient m2;     // B (LONG/TWO)
-    private final Ingredient m3;     // C (TWO)
-    private final Ingredient m4;     // D (TWO)
-    private final Ingredient h0;        // E (SHORT/LONG/TWO)
-    private final Ingredient h1;  // E (POLEARM)
-    private final Ingredient h2;     // F (POLEARM)
-
+    // Ингредиенты для разных частей: клинки (A–D) и рукояти (E–F)
+    private final Ingredient A_Blade;
+    private final Ingredient B_Blade;
+    private final Ingredient C_Blade;
+    private final Ingredient D_Blade;
+    private final Ingredient E_Handle;
+    private final Ingredient F_Handle;
 
     public WeaponForgingRecipe(ResourceLocation id,
                                Form form,
                                ItemStack result,
-                               Ingredient m1,
-                               Ingredient m0,
-                               Ingredient m2,
-                               Ingredient m3,
-                               Ingredient m4,
-                               Ingredient h0,
-                               Ingredient h2,
-                               Ingredient h1) {
+                               Ingredient A_Blade,
+                               Ingredient B_Blade,
+                               Ingredient C_Blade,
+                               Ingredient D_Blade,
+                               Ingredient E_Handle,
+                               Ingredient F_Handle) {
         this.id = id;
         this.form = form;
-        this.result = result;
-        this.m1 = m1 == null ? Ingredient.EMPTY : m1;
-        this.m0 = m0 == null ? Ingredient.EMPTY : m0;
-        this.m2 = m2 == null ? Ingredient.EMPTY : m2;
-        this.m3 = m3 == null ? Ingredient.EMPTY : m3;
-        this.m4 = m4 == null ? Ingredient.EMPTY : m4;
-        this.h0 = h0 == null ? Ingredient.EMPTY : h0;
-        this.h2 = h2 == null ? Ingredient.EMPTY : h2;
-        this.h1 = h1 == null ? Ingredient.EMPTY : h1;
+        this.result = result.copy();
+        // Любой null трактуем как пустой ингридиент
+        this.A_Blade  = A_Blade  == null ? Ingredient.EMPTY : A_Blade;
+        this.B_Blade  = B_Blade  == null ? Ingredient.EMPTY : B_Blade;
+        this.C_Blade  = C_Blade  == null ? Ingredient.EMPTY : C_Blade;
+        this.D_Blade  = D_Blade  == null ? Ingredient.EMPTY : D_Blade;
+        this.E_Handle = E_Handle == null ? Ingredient.EMPTY : E_Handle;
+        this.F_Handle = F_Handle == null ? Ingredient.EMPTY : F_Handle;
     }
 
-    // Проверяем активные ячейки конкретной формы
-    @Override public boolean matches(Container c, Level lvl) {
+    @Override public ResourceLocation getId() { return id; }
+    public Form form() { return form; }
+
+    @Override
+    public RecipeSerializer<?> getSerializer() {
+        return com.ixiastraixi.roweniafull.registry.warforge.WarforgeRecipes.WEAPON_FORGING_SERIALIZER.get();
+    }
+
+    @Override
+    public RecipeType<?> getType() {
+        return com.ixiastraixi.roweniafull.registry.warforge.WarforgeRecipes.WEAPON_FORGING_TYPE.get();
+    }
+
+    @Override
+    public boolean matches(Container c, Level level) {
+        // Проверяем активные слоты и убеждаемся, что остальные пусты
         return switch (form) {
-            case SHORT ->
-                       m1.test(c.getItem(1))
-                    && h0.test(c.getItem(4))
+            case SHORT -> B_Blade.test(c.getItem(1))
+                    && E_Handle.test(c.getItem(4))
                     && emptyExcept(c, new int[]{1,4});
-            case LONG ->
-                       m0.test(c.getItem(0))
-                    && m2.test(c.getItem(1))
-                    && h0.test(c.getItem(4))
+            case LONG -> A_Blade.test(c.getItem(0))
+                    && B_Blade.test(c.getItem(1))
+                    && E_Handle.test(c.getItem(4))
                     && emptyExcept(c, new int[]{0,1,4});
-            case TWO_HANDED ->
-                       m0.test(c.getItem(0))
-                    && m2.test(c.getItem(1))
-                    && m3.test(c.getItem(2))
-                    && m4.test(c.getItem(3))
-                    && h0.test(c.getItem(4))
+            case TWO_HANDED -> A_Blade.test(c.getItem(0))
+                    && B_Blade.test(c.getItem(1))
+                    && C_Blade.test(c.getItem(2))
+                    && D_Blade.test(c.getItem(3))
+                    && E_Handle.test(c.getItem(4))
                     && emptyExcept(c, new int[]{0,1,2,3,4});
-            case POLEARM ->
-                    m1.test(c.getItem(1))
-                    && h2.test(c.getItem(7))
-                    && h1.test(c.getItem(4))
-                    && emptyExcept(c, new int[]{1,7,4});
+            case POLEARM -> B_Blade.test(c.getItem(1))
+                    && F_Handle.test(c.getItem(5))
+                    && E_Handle.test(c.getItem(4))
+                    && emptyExcept(c, new int[]{1,5,4});
         };
     }
 
-    // Убедиться, что во всех ячейках, кроме перечисленных, ничего нет
+    /**
+     * Проверяет, что во всех слотах, кроме перечисленных, нет предметов.
+     */
     private boolean emptyExcept(Container c, int[] act) {
         outer:
         for (int i = 0; i < 9; i++) {
-            for (int a : act) if (a == i) continue outer;
+            for (int a : act) {
+                if (a == i) continue outer;
+            }
             if (!c.getItem(i).isEmpty()) return false;
         }
         return true;
     }
 
-    @Override public ItemStack assemble(Container c, RegistryAccess ra) { return result.copy(); }
-    @Override public ItemStack getResultItem(RegistryAccess ra) { return result; }
-    @Override public boolean canCraftInDimensions(int w, int h) { return true; }
-    @Override public ResourceLocation getId() { return id; }
-    @Override public RecipeSerializer<?> getSerializer() { return WEAPON_FORGING_SERIALIZER.get(); }
-    @Override public RecipeType<?> getType() { return WEAPON_FORGING_TYPE.get(); }
-    public Form form() { return form; }
-
-    // Возвращает индексы активных ячеек для каждой формы — можно использовать в других классах
-    public static int[] activeIndices(WeaponForgingRecipe.Form f) {
+    /**
+     * Возвращает индексы активных ячеек рецепта для каждой формы. Может пригодиться в меню.
+     */
+    public static int[] activeIndices(Form f) {
         return switch (f) {
             case SHORT      -> new int[]{1,4};
             case LONG       -> new int[]{0,1,4};
             case TWO_HANDED -> new int[]{0,1,2,3,4};
-            case POLEARM    -> new int[]{1,7,4};
+            case POLEARM    -> new int[]{1,5,4};
         };
     }
 
-//------------------------------
-//       Сериализатор
-//------------------------------
+    @Override public ItemStack assemble(Container c, RegistryAccess ra) { return result.copy(); }
+    @Override public boolean canCraftInDimensions(int w, int h) { return true; }
+    @Override public ItemStack getResultItem(RegistryAccess ra) { return result.copy(); }
 
+    @Override
+    public NonNullList<Ingredient> getIngredients() {
+        NonNullList<Ingredient> list = NonNullList.create();
+        // только непустые ингредиенты (для JEI)
+        if (!A_Blade.isEmpty()) list.add(A_Blade);
+        if (!B_Blade.isEmpty()) list.add(B_Blade);
+        if (!C_Blade.isEmpty()) list.add(C_Blade);
+        if (!D_Blade.isEmpty()) list.add(D_Blade);
+        if (!E_Handle.isEmpty()) list.add(E_Handle);
+        if (!F_Handle.isEmpty()) list.add(F_Handle);
+        return list;
+    }
+
+    /**
+     * Сериализатор рецепта. Читает форму, результат и необходимые слоты из JSON,
+     * отправляет/получает через сеть только активные ингредиенты.
+     */
     public static class Serializer implements RecipeSerializer<WeaponForgingRecipe> {
 
         @Override
         public WeaponForgingRecipe fromJson(ResourceLocation id, JsonObject json) {
-            // result (даём явную ошибку, если его нет)
+            // форма
+            Form form = Form.valueOf(GsonHelper.getAsString(json, "form").toUpperCase());
+
+            // результат
             ItemStack result = ShapedRecipe.itemStackFromJson(GsonHelper.getAsJsonObject(json, "result"));
 
-            // form: может отсутствовать — тогда пытаемся вывести из набора ключей
-            Form form = readOrInferForm(id, json);
+            // по умолчанию пусто
+            Ingredient A = Ingredient.EMPTY, B = Ingredient.EMPTY, C = Ingredient.EMPTY;
+            Ingredient D = Ingredient.EMPTY, E = Ingredient.EMPTY, F = Ingredient.EMPTY;
 
-            Ingredient material = Ingredient.EMPTY;
-            Ingredient materialA = Ingredient.EMPTY, materialB = Ingredient.EMPTY, materialC = Ingredient.EMPTY, materialD = Ingredient.EMPTY;
-            Ingredient handle = Ingredient.EMPTY, handleTop = Ingredient.EMPTY, handleBottom = Ingredient.EMPTY;
-
-            switch (form) {
-                case SHORT -> {
-                    material = readIng(json, "material", id, form);
-                    handle   = readIng(json, "handle",   id, form);
+            // читаем только необходимые для этой формы слоты
+            for (int idx : activeIndices(form)) {
+                String key = switch (idx) {
+                    case 0 -> "A_Blade";
+                    case 1 -> "B_Blade";
+                    case 2 -> "C_Blade";
+                    case 3 -> "D_Blade";
+                    case 4 -> "E_Handle";
+                    case 5 -> "F_Handle";
+                    default -> null;
+                };
+                if (key == null || !json.has(key)) {
+                    throw new IllegalArgumentException("Missing required ingredient '" + key + "' for form " + form);
                 }
-                case LONG -> {
-                    materialA = readIng(json, "material_a", id, form);
-                    materialB = readIng(json, "material_b", id, form);
-                    handle    = readIng(json, "handle",     id, form);
-                }
-                case TWO_HANDED -> {
-                    materialA = readIng(json, "material_a", id, form);
-                    materialB = readIng(json, "material_b", id, form);
-                    materialC = readIng(json, "material_c", id, form);
-                    materialD = readIng(json, "material_d", id, form);
-                    handle    = readIng(json, "handle",     id, form);
-                }
-                case POLEARM -> {
-                    material     = readIng(json, "material",  id, form);
-                    handleTop    = readIng(json, "handle_a",  id, form);
-                    handleBottom = readIng(json, "handle_b",  id, form);
+                Ingredient ing = Ingredient.fromJson(json.get(key));
+                switch (idx) {
+                    case 0 -> A = ing;
+                    case 1 -> B = ing;
+                    case 2 -> C = ing;
+                    case 3 -> D = ing;
+                    case 4 -> E = ing;
+                    case 5 -> F = ing;
                 }
             }
 
-            return new WeaponForgingRecipe(id, form, result, material, materialA, materialB, materialC, materialD, handle, handleTop, handleBottom);
+            return new WeaponForgingRecipe(id, form, result, A, B, C, D, E, F);
         }
 
-        @Override
-        public void toNetwork(FriendlyByteBuf buf, WeaponForgingRecipe r) {
-            buf.writeEnum(r.form);
-            buf.writeItem(r.result);
-
-            switch (r.form) {
-                case SHORT -> {
-                    r.m1.toNetwork(buf);
-                    r.h0.toNetwork(buf);
-                }
-                case LONG -> {
-                    r.m0.toNetwork(buf);
-                    r.m2.toNetwork(buf);
-                    r.h0.toNetwork(buf);
-                }
-                case TWO_HANDED -> {
-                    r.m0.toNetwork(buf);
-                    r.m2.toNetwork(buf);
-                    r.m3.toNetwork(buf);
-                    r.m4.toNetwork(buf);
-                    r.h0.toNetwork(buf);
-                }
-                case POLEARM -> {
-                    r.m1.toNetwork(buf);
-                    r.h2.toNetwork(buf);
-                    r.h1.toNetwork(buf);
-                }
-            }
-        }
-
+        @Nullable
         @Override
         public WeaponForgingRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buf) {
             Form form = buf.readEnum(Form.class);
             ItemStack result = buf.readItem();
 
-            Ingredient material = Ingredient.EMPTY;
-            Ingredient materialA = Ingredient.EMPTY, materialB = Ingredient.EMPTY, materialC = Ingredient.EMPTY, materialD = Ingredient.EMPTY;
-            Ingredient handle = Ingredient.EMPTY, handleTop = Ingredient.EMPTY, handleBottom = Ingredient.EMPTY;
-
-            switch (form) {
-                case SHORT -> {
-                    material = Ingredient.fromNetwork(buf);
-                    handle   = Ingredient.fromNetwork(buf);
-                }
-                case LONG -> {
-                    materialA = Ingredient.fromNetwork(buf);
-                    materialB = Ingredient.fromNetwork(buf);
-                    handle    = Ingredient.fromNetwork(buf);
-                }
-                case TWO_HANDED -> {
-                    materialA = Ingredient.fromNetwork(buf);
-                    materialB = Ingredient.fromNetwork(buf);
-                    materialC = Ingredient.fromNetwork(buf);
-                    materialD = Ingredient.fromNetwork(buf);
-                    handle    = Ingredient.fromNetwork(buf);
-                }
-                case POLEARM -> {
-                    material     = Ingredient.fromNetwork(buf);
-                    handleTop    = Ingredient.fromNetwork(buf);
-                    handleBottom = Ingredient.fromNetwork(buf);
+            Ingredient A = Ingredient.EMPTY, B = Ingredient.EMPTY, C = Ingredient.EMPTY;
+            Ingredient D = Ingredient.EMPTY, E = Ingredient.EMPTY, F = Ingredient.EMPTY;
+            for (int idx : activeIndices(form)) {
+                Ingredient ing = Ingredient.fromNetwork(buf);
+                switch (idx) {
+                    case 0 -> A = ing;
+                    case 1 -> B = ing;
+                    case 2 -> C = ing;
+                    case 3 -> D = ing;
+                    case 4 -> E = ing;
+                    case 5 -> F = ing;
                 }
             }
-
-            return new WeaponForgingRecipe(id, form, result, material, materialA, materialB, materialC, materialD, handle, handleTop, handleBottom);
+            return new WeaponForgingRecipe(id, form, result, A, B, C, D, E, F);
         }
 
-        // ---- helpers ----
-
-        private static Ingredient readIng(JsonObject json, String key, ResourceLocation id, Form f) {
-            if (!json.has(key))
-                throw new JsonSyntaxException("Recipe "+id+" ("+f+") missing ingredient '"+key+"'");
-            return Ingredient.fromJson(json.get(key));
-        }
-
-        private static Form readOrInferForm(ResourceLocation id, JsonObject json) {
-            if (GsonHelper.isStringValue(json, "form")) {
-                String f = GsonHelper.getAsString(json, "form");
-                return switch (f) {
-                    case "short" -> Form.SHORT;
-                    case "long" -> Form.LONG;
-                    case "two_handed" -> Form.TWO_HANDED;
-                    case "polearm" -> Form.POLEARM;
-                    default -> throw new JsonSyntaxException("Recipe "+id+" has unknown form: '"+f+"'");
-                };
+        @Override
+        public void toNetwork(FriendlyByteBuf buf, WeaponForgingRecipe recipe) {
+            buf.writeEnum(recipe.form);
+            buf.writeItem(recipe.result);
+            // отправляем только активные ингредиенты
+            for (int idx : activeIndices(recipe.form)) {
+                switch (idx) {
+                    case 0 -> recipe.A_Blade.toNetwork(buf);
+                    case 1 -> recipe.B_Blade.toNetwork(buf);
+                    case 2 -> recipe.C_Blade.toNetwork(buf);
+                    case 3 -> recipe.D_Blade.toNetwork(buf);
+                    case 4 -> recipe.E_Handle.toNetwork(buf);
+                    case 5 -> recipe.F_Handle.toNetwork(buf);
+                }
             }
-
-            // авто-детекция по ключам, если form не указан
-            boolean hasA = json.has("material_a");
-            boolean hasB = json.has("material_b");
-            boolean hasC = json.has("material_c");
-            boolean hasD = json.has("material_d");
-            boolean hasMat = json.has("material");
-            boolean hasHandle = json.has("handle");
-            boolean hasHa = json.has("handle_a");
-            boolean hasHb = json.has("handle_b");
-
-            if (hasMat && hasHa && hasHb) return Form.POLEARM;
-            if (hasA && hasB && hasC && hasD && hasHandle) return Form.TWO_HANDED;
-            if (hasA && hasB && hasHandle) return Form.LONG;
-            if (hasMat && hasHandle) return Form.SHORT;
-
-            throw new JsonSyntaxException("Recipe "+id+" missing 'form' and cannot infer: expected keys for one of forms (short/long/two_handed/polearm)");
         }
     }
 }
