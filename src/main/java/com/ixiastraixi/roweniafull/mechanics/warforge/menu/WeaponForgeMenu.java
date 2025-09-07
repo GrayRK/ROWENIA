@@ -42,8 +42,8 @@ public class WeaponForgeMenu extends AbstractContainerMenu {
     private static final int IDX_OUT = WeaponForgeBlockEntity.SLOT_OUT;
 
     // --- Инвентарь игрока на текстуре ---
-    private static final int PLAYER_INV_X = 8;
-    private static final int PLAYER_INV_Y = 124;
+    private static final int PLAYER_INV_X = 58;
+    private static final int PLAYER_INV_Y = 165;
 
     private static boolean isHandleSlotIndex(int beIdx) {
         return beIdx == IDX_E || beIdx == IDX_F;
@@ -70,7 +70,7 @@ public class WeaponForgeMenu extends AbstractContainerMenu {
 
     // Номера слотов для быстрого перемещения
     private int fuelMenuIdx    = -1;
-    private int  playerEndIdx  =  0;
+    private int playerEndIdx   =  0;
     private int playerStartIdx =  0;
     private int cachedTypeIdx  = -1;
 
@@ -89,32 +89,32 @@ public class WeaponForgeMenu extends AbstractContainerMenu {
 //-----------------------------------
 
         // --- Фиксированные слоты ---
-        fuel = addInputSlot(cont, IDX_FUEL, 183, 37);
+        fuel = addInputSlot(cont, IDX_FUEL, 240, 225);
         fuelMenuIdx = this.slots.size() - 1;
-        out  = addResultSlot(cont, IDX_OUT, 114, 61, be);
-        preview = addPreviewSlot(previewCont, 0, 154, 26);
+        out  = addResultSlot(cont, IDX_OUT, 185, 83, be);
+        preview = addPreviewSlot(previewCont, 0, 240, 95);
 
         // --- входные ячейки по вкладкам ---
         // SHORT:
-        v[IDX_B][TAB_SHORT] = addInputSlot(cont, IDX_B, 26, 55);
-        v[IDX_E][TAB_SHORT] = addInputSlot(cont, IDX_E, 26, 83);
+        v[IDX_B][TAB_SHORT] = addInputSlot(cont, IDX_B, 53, 70);
+        v[IDX_E][TAB_SHORT] = addInputSlot(cont, IDX_E, 5, 118);
 
         // LONG:
-        v[IDX_A][TAB_LONG] = addInputSlot(cont, IDX_A, 26, 37);
-        v[IDX_B][TAB_LONG] = addInputSlot(cont, IDX_B, 26, 55);
-        v[IDX_E][TAB_LONG] = addInputSlot(cont, IDX_E, 26, 83);
+        v[IDX_A][TAB_LONG] = addInputSlot(cont, IDX_A, 113, 10);
+        v[IDX_B][TAB_LONG] = addInputSlot(cont, IDX_B, 53, 70);
+        v[IDX_E][TAB_LONG] = addInputSlot(cont, IDX_E, 5, 118);
 
         // TWO-HANDED:
-        v[IDX_A][TAB_TWO] = addInputSlot(cont, IDX_A, 26, 37);
-        v[IDX_B][TAB_TWO] = addInputSlot(cont, IDX_B, 26, 55);
-        v[IDX_C][TAB_TWO] = addInputSlot(cont, IDX_C,  8, 55);
-        v[IDX_D][TAB_TWO] = addInputSlot(cont, IDX_D, 44, 55);
-        v[IDX_E][TAB_TWO] = addInputSlot(cont, IDX_E, 26, 83);
+        v[IDX_A][TAB_TWO] = addInputSlot(cont, IDX_A, 113, 10);
+        v[IDX_B][TAB_TWO] = addInputSlot(cont, IDX_B, 53, 70);
+        v[IDX_C][TAB_TWO] = addInputSlot(cont, IDX_C,  35, 70);
+        v[IDX_D][TAB_TWO] = addInputSlot(cont, IDX_D, 53, 88);
+        v[IDX_E][TAB_TWO] = addInputSlot(cont, IDX_E, 5, 118);
 
         // POLEARM:
-        v[IDX_B][TAB_POLEARM] = addInputSlot(cont, IDX_B, 26, 37);
-        v[IDX_F][TAB_POLEARM] = addInputSlot(cont, IDX_F, 26, 65);
-        v[IDX_E][TAB_POLEARM] = addInputSlot(cont, IDX_E, 26, 83);
+        v[IDX_B][TAB_POLEARM] = addInputSlot(cont, IDX_B, 113, 10);
+        v[IDX_F][TAB_POLEARM] = addInputSlot(cont, IDX_F, 53, 70);
+        v[IDX_E][TAB_POLEARM] = addInputSlot(cont, IDX_E, 5, 118);
 
         // Инвентарь игрока
         playerStartIdx = this.slots.size();
