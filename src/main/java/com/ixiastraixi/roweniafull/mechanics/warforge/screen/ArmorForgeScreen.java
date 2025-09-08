@@ -51,48 +51,50 @@ public class ArmorForgeScreen extends AbstractContainerScreen<ArmorForgeMenu> {
 //--------------------------------------------------------------------
 
     // Размеры текстуры и видимой части
-    private static final int TEX_W  = 241; // Ширина отображаемой текстуры GUI
-    private static final int TEX_H  = 199; // Высота отображаемой текстуры GUI
-    private static final int ATLAS_W = 241; // Ширина текстуры GUI целиком
-    private static final int ATLAS_H = 211; // Высота текстуры GUI целиком
+    private static final int TEX_W  = 270; // Ширина отображаемой текстуры GUI
+    private static final int TEX_H  = 247; // Высота отображаемой текстуры GUI
+    private static final int ATLAS_W = 270; // Ширина текстуры GUI целиком
+    private static final int ATLAS_H = 270; // Высота текстуры GUI целиком
 
     // Прогрессбар
-    private static final int PB_W       = 80;  // Ширина PB
-    private static final int PB_H       = 6;   // Высота PB
-    private static final int PB_U_EMPTY = 0;   // На какой X нарисован пустой PB в атласе GUI
-    private static final int PB_V_EMPTY = 199; // На какой Y нарисован пустой PB в атласе GUI
-    private static final int PB_U_FULL  = 0;   // На какой X нарисован заполненный PB в атласе GUI
-    private static final int PB_V_FULL  = 205; // На какой Y нарисован заполненный PB в атласе GUI
-    private static final int PB_X       = 119; // На какую X устанавливаем PB в GUI
-    private static final int PB_Y       = 85;  // На какую Y устанавливаем PB в GUI
+    private static final int PB_W       = 164;  // Ширина PB
+    private static final int PB_H       = 11;   // Высота PB
+    private static final int PB_U_EMPTY = 50;   // На какой X нарисован пустой PB в атласе GUI
+    private static final int PB_V_EMPTY = 259; // На какой Y нарисован пустой PB в атласе GUI
+    private static final int PB_U_FULL  = 50;   // На какой X нарисован заполненный PB в атласе GUI
+    private static final int PB_V_FULL  = 248; // На какой Y нарисован заполненный PB в атласе GUI
+    private static final int PB_X       = 56; // На какую X устанавливаем PB в GUI
+    private static final int PB_Y       = 151;  // На какую Y устанавливаем PB в GUI
 
     // Размеры и координаты стрелок/кнопки крафта
         //Кнопки переключения вкладок
-    private static final int AR_W    = 17;  // Ширина кнопки переключения вкладок
-    private static final int AR_H    = 10;  // Высота кнопки переключения вкладок
-    private static final int AR_L_X  = 106; // На какую X устанавливаем левую кнопку в GUI
-    private static final int AR_R_X  = 194; // На какую X устанавливаем правую кнопку в GUI
-    private static final int AR_Y    = 0;   // На какой Y устанавливаем обе кнопки в GUI
-        //Кнопка крафта
-    private static final int CRAFT_W = 16;  // Ширина кнопки крафта
-    private static final int CRAFT_H = 9;   // Высота кнопки крафта
-    private static final int CRAFT_X = 152; // На какую X устанавливаем кнопку крафта в GUI
-    private static final int CRAFT_Y = 94;  // На какую Y устанавливаем кнопку крафта в GUI
+    private static final int AR_W    =22;  // Ширина кнопки переключения вкладок
+    private static final int AR_H    =14;  // Высота кнопки переключения вкладок
+    private static final int AR_L_X  =54;  // На какую X устанавливаем левую кнопку в GUI
+    private static final int AR_R_X  =78; // На какую X устанавливаем правую кнопку в GUI
+    private static final int AR_Y    =129;   // На какой Y устанавливаем обе кнопки в GUI
+        //Кнопка крафт
+    private static final int CRAFT_W =114;  // Ширина кнопки крафта
+    private static final int CRAFT_H =14;   // Высота кнопки крафта
+    private static final int CRAFT_X =108; // На какую X устанавливаем кнопку крафта в GUI
+    private static final int CRAFT_Y =129; // На какую Y устанавливаем кнопку крафта в GUI
 
     // Индикатор топлива
-    private static final int FUEL_TEX_W   = 120; // Общая ширина текстуры индикатора
-    private static final int FUEL_TEX_H   = 47;  // Общая высота текстуры индикатора
-    private static final int FUEL_SLICE_H = 46;  // Шаг по ширине для смены отображаемой части текстуры
-    private static final int FUEL_X       = 214; // На какую X устанавливаем индикатор в GUI
-    private static final int FUEL_Y       = 61;  // На какую Y устанавливаем индикатор в GUI
+    private static final int FUEL_TEX_W   =170; // Общая ширина текстуры индикатора
+    private static final int FUEL_TEX_H   =60;  // Общая высота текстуры индикатора
+    private static final int FUEL_SLICE_W =34;  // Шаг по ширине для смены отображаемой части текстуры
+    private static final int FUEL_X       =231; // На какую X устанавливаем индикатор в GUI
+    private static final int FUEL_Y       =156;  // На какую Y устанавливаем индикатор в GUI
 
     // Наковальня анимация
-    private static final int FORGE_W = 62;    // Ширина кадра на текстуре для анимации
-    private static final int FORGE_H = 56;    // Высота кадра на текстуре для анимации
-    private static final int FORGE_U_A = 62;  // Начало кадра по X для фазы анимации A
-    private static final int FORGE_U_B = 124; // Начало кадра по X для фазы анимации B
-    private static final int FORGE_X = 126;   // На какую X устанавливаем наковальню в GUI
-    private static final int FORGE_Y = 24;    // На какую Y устанавливаем наковальню в GUI
+    private static final int FORGE_X =110; // На какую X устанавливаем наковальню в GUI
+    private static final int FORGE_Y =25;  // На какую Y устанавливаем наковальню в GUI
+    private static final int FORGE_SLICE_W =100; // Ширина кадра на текстуре для анимации
+    private static final int FORGE_SLICE_H =100; // Высота кадра на текстуре для анимации
+    private static final int FORGE_TEX_W =300;  // Общая ширина текстуры наковальни
+    private static final int FORGE_TEX_H =100;   // Общая высота текстуры наковальни
+    private static final int FORGE_U_A = 100;  // Начало кадра по X для фазы анимации A
+    private static final int FORGE_U_B = 200; // Начало кадра по X для фазы анимаяции B
     private static final int HAMMER_SPEED_TICKS = 6; // Скорость анимации в тиках
     private int  hammerStartPhase   = 0;  // Стартовая фаза анимации (0 — начать с A, 1 — начать с B)
     private long pressStartTick     = 0L; // Тик начала удержания (для фазы)
@@ -109,8 +111,8 @@ public class ArmorForgeScreen extends AbstractContainerScreen<ArmorForgeMenu> {
     // Задаём размеры в соответствии с текстурой
     public ArmorForgeScreen(ArmorForgeMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
-        this.imageWidth  = TEX_W;
-        this.imageHeight = TEX_H;
+        this.imageWidth  = TEX_W + 50;
+        this.imageHeight = TEX_H + 50;
     }
 
     // Выбирает фон для текущей вкладки
@@ -193,13 +195,13 @@ public class ArmorForgeScreen extends AbstractContainerScreen<ArmorForgeMenu> {
         int buf = Math.max(0, Math.min(4, menu.fuelStored()));
         int u, w;
         switch (buf) {
-            case 0 -> { u = 0;  w = 23; }
-            case 1 -> { u = 24; w = 24; }
-            case 2 -> { u = 48; w = 24; }
-            case 3 -> { u = 72; w = 24; }
-            default -> { u = 97; w = 23; }
+            case 0 -> { u = FUEL_SLICE_W * 0;  w = FUEL_SLICE_W; }
+            case 1 -> { u = FUEL_SLICE_W * 1; w = FUEL_SLICE_W; }
+            case 2 -> { u = FUEL_SLICE_W * 2; w = FUEL_SLICE_W; }
+            case 3 -> { u = FUEL_SLICE_W * 3; w = FUEL_SLICE_W; }
+            default -> { u = FUEL_SLICE_W * 4; w = FUEL_SLICE_W; }
         }
-        g.blit(FUEL_IND, leftPos + FUEL_X, topPos + FUEL_Y, u, 0, w, FUEL_SLICE_H, FUEL_TEX_W, FUEL_TEX_H);
+        g.blit(FUEL_IND, leftPos + FUEL_X, topPos + FUEL_Y, u, 0, w, FUEL_TEX_H, FUEL_TEX_W, FUEL_TEX_H);
 
         // Наковальня
         int forgeU;
@@ -221,7 +223,7 @@ public class ArmorForgeScreen extends AbstractContainerScreen<ArmorForgeMenu> {
             forgeU = 0;
         }
         lastProgress = prog;
-        g.blit(FORGE_ANIM, leftPos + FORGE_X, topPos + FORGE_Y, forgeU, 0, FORGE_W, FORGE_H, 186, 57);
+        g.blit(FORGE_ANIM, leftPos + FORGE_X, topPos + FORGE_Y, forgeU, 0, FORGE_SLICE_W, FORGE_SLICE_H, FORGE_TEX_W, FORGE_TEX_H);
 
         // Кнопки
         double relX = mouseX - leftPos;

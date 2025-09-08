@@ -1,0 +1,8 @@
+{
+  "type": "roweniafull:weapon_forging",
+  "form": "polearm",
+  "result": { "item": "minecraft:iron_axe" },
+  "B_Blade":  { "item": "roweniafull:blade_blank_iron" },
+  "F_Handle":  { "tag": "roweniafull:handles" },
+  "E_Handle": { "tag": "roweniafull:handles" }
+}

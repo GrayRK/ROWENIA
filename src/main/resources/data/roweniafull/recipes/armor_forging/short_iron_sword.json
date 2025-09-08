@@ -1,0 +1,7 @@
+{
+  "type": "roweniafull:weapon_forging",
+  "form": "short",
+  "result": { "item": "minecraft:iron_sword" },
+  "B_Blade": { "item": "roweniafull:blade_blank_iron" },
+  "E_Handle": { "tag": "roweniafull:handles" }
+}

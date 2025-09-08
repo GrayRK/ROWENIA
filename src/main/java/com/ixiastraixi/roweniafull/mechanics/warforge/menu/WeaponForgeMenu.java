@@ -91,7 +91,7 @@ public class WeaponForgeMenu extends AbstractContainerMenu {
         // --- Фиксированные слоты ---
         fuel = addFuelSlot(cont, IDX_FUEL, 240, 225);
         fuelMenuIdx = this.slots.size() - 1;
-        out  = addResultSlot(cont, IDX_OUT, 185, 83, be);
+        out  = addResultSlot(cont, IDX_OUT, 159, 80, be);
         preview = addPreviewSlot(previewCont, 0, 240, 95);
 
         // --- входные ячейки по вкладкам ---
@@ -113,7 +113,7 @@ public class WeaponForgeMenu extends AbstractContainerMenu {
 
         // POLEARM:
         v[IDX_B][TAB_POLEARM] = addInputSlot(cont, IDX_B, 113, 10);
-        v[IDX_F][TAB_POLEARM] = addInputSlot(cont, IDX_F, 53, 70);
+        v[IDX_F][TAB_POLEARM] = addInputSlot(cont, IDX_F, 58, 65);
         v[IDX_E][TAB_POLEARM] = addInputSlot(cont, IDX_E, 5, 118);
 
         // Инвентарь игрока

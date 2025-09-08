@@ -1,0 +1,9 @@
+{
+  "type": "roweniafull:armor_forging",
+  "form": "boots",
+  "result": { "item": "minecraft:iron_boots" },
+  "p3": { "item": "roweniafull:armor_plate_iron" },
+  "p5": { "item": "roweniafull:armor_plate_iron" },
+  "p6": { "item": "roweniafull:armor_plate_iron" },
+  "p8": { "item": "roweniafull:armor_plate_iron" }
+}

@@ -46,8 +46,8 @@ public class ArmorForgeMenu extends AbstractContainerMenu {
     private static final int IDX_OUT  = ArmorForgeBlockEntity.SLOT_OUT;
 
     // --- Инвентарь игрока на текстуре ---
-    private static final int PLAYER_INV_X = 45;
-    private static final int PLAYER_INV_Y = 117;
+    private static final int PLAYER_INV_X = 58;
+    private static final int PLAYER_INV_Y = 165;
 
     private final ArmorForgeBlockEntity be;
     private final ContainerData data;
@@ -86,52 +86,52 @@ public class ArmorForgeMenu extends AbstractContainerMenu {
 //-----------------------------------
 
         // --- Фиксированные слоты ---
-        fuel = addFuelSlot(cont, IDX_FUEL, 218, 16);
+        fuel = addFuelSlot(cont, IDX_FUEL, 240, 225);
         fuelMenuIdx = this.slots.size() - 1;
-        out  = addResultSlot(cont, IDX_OUT, 114, 61, be);
-        preview = addPreviewSlot(previewCont, 0, 189, 16);
+        out  = addResultSlot(cont, IDX_OUT, 159, 80, be);
+        preview = addPreviewSlot(previewCont, 0, 240, 95);
 
         // --- входные ячейки по вкладкам ---
         // HELMET:
-        v[IDX_A][TAB_HELMET] = addInputSlot(cont, IDX_A, 27, 39);
-        v[IDX_B][TAB_HELMET] = addInputSlot(cont, IDX_B, 45, 39);
-        v[IDX_C][TAB_HELMET] = addInputSlot(cont, IDX_C, 63, 39);
-        v[IDX_D][TAB_HELMET] = addInputSlot(cont, IDX_D, 27, 57);
-        v[IDX_F][TAB_HELMET] = addInputSlot(cont, IDX_F, 63, 57);
+        v[IDX_A][TAB_HELMET] = addInputSlot(cont, IDX_A, 31, 52);
+        v[IDX_B][TAB_HELMET] = addInputSlot(cont, IDX_B, 49, 52);
+        v[IDX_C][TAB_HELMET] = addInputSlot(cont, IDX_C, 67, 52);
+        v[IDX_D][TAB_HELMET] = addInputSlot(cont, IDX_D, 31, 70);
+        v[IDX_F][TAB_HELMET] = addInputSlot(cont, IDX_F, 67, 70);
 
         // CHEST:
-        v[IDX_A][TAB_CHEST] = addInputSlot(cont, IDX_A, 27, 39);
-        v[IDX_C][TAB_CHEST] = addInputSlot(cont, IDX_C, 63, 39);
-        v[IDX_D][TAB_CHEST] = addInputSlot(cont, IDX_D, 27, 57);
-        v[IDX_E][TAB_CHEST] = addInputSlot(cont, IDX_E, 45, 57);
-        v[IDX_F][TAB_CHEST] = addInputSlot(cont, IDX_F, 63, 57);
-        v[IDX_G][TAB_CHEST] = addInputSlot(cont, IDX_G, 27, 75);
-        v[IDX_H][TAB_CHEST] = addInputSlot(cont, IDX_H, 45, 75);
-        v[IDX_I][TAB_CHEST] = addInputSlot(cont, IDX_I, 63, 75);
+        v[IDX_A][TAB_CHEST] = addInputSlot(cont, IDX_A, 31, 52);
+        v[IDX_C][TAB_CHEST] = addInputSlot(cont, IDX_C, 67, 52);
+        v[IDX_D][TAB_CHEST] = addInputSlot(cont, IDX_D, 31, 70);
+        v[IDX_E][TAB_CHEST] = addInputSlot(cont, IDX_E, 49, 70);
+        v[IDX_F][TAB_CHEST] = addInputSlot(cont, IDX_F, 67, 70);
+        v[IDX_G][TAB_CHEST] = addInputSlot(cont, IDX_G, 31, 88);
+        v[IDX_H][TAB_CHEST] = addInputSlot(cont, IDX_H, 49, 88);
+        v[IDX_I][TAB_CHEST] = addInputSlot(cont, IDX_I, 67, 88);
 
         // LEGS:
-        v[IDX_A][TAB_LEGS] = addInputSlot(cont, IDX_A, 27, 39);
-        v[IDX_B][TAB_LEGS] = addInputSlot(cont, IDX_B, 45, 39);
-        v[IDX_C][TAB_LEGS] = addInputSlot(cont, IDX_C, 63, 39);
-        v[IDX_D][TAB_LEGS] = addInputSlot(cont, IDX_D, 27, 57);
-        v[IDX_F][TAB_LEGS] = addInputSlot(cont, IDX_F, 63, 57);
-        v[IDX_G][TAB_LEGS] = addInputSlot(cont, IDX_G, 27, 75);
-        v[IDX_I][TAB_LEGS] = addInputSlot(cont, IDX_I, 63, 75);
+        v[IDX_A][TAB_LEGS] = addInputSlot(cont, IDX_A, 31, 52);
+        v[IDX_B][TAB_LEGS] = addInputSlot(cont, IDX_B, 49, 52);
+        v[IDX_C][TAB_LEGS] = addInputSlot(cont, IDX_C, 67, 52);
+        v[IDX_D][TAB_LEGS] = addInputSlot(cont, IDX_D, 31, 70);
+        v[IDX_F][TAB_LEGS] = addInputSlot(cont, IDX_F, 67, 70);
+        v[IDX_G][TAB_LEGS] = addInputSlot(cont, IDX_G, 31, 88);
+        v[IDX_I][TAB_LEGS] = addInputSlot(cont, IDX_I, 67, 88);
 
         // BOOTS:
-        v[IDX_D][TAB_BOOTS] = addInputSlot(cont, IDX_D, 27, 57);
-        v[IDX_F][TAB_BOOTS] = addInputSlot(cont, IDX_F, 63, 57);
-        v[IDX_G][TAB_BOOTS] = addInputSlot(cont, IDX_G, 27, 75);
-        v[IDX_I][TAB_BOOTS] = addInputSlot(cont, IDX_I, 63, 75);
+        v[IDX_D][TAB_BOOTS] = addInputSlot(cont, IDX_D, 31, 70);
+        v[IDX_F][TAB_BOOTS] = addInputSlot(cont, IDX_F, 67, 70);
+        v[IDX_G][TAB_BOOTS] = addInputSlot(cont, IDX_G, 31, 88);
+        v[IDX_I][TAB_BOOTS] = addInputSlot(cont, IDX_I, 67, 88);
 
         // SHIELD:
-        v[IDX_A][TAB_SHIELD] = addInputSlot(cont, IDX_A, 27, 39);
-        v[IDX_B][TAB_SHIELD] = addInputSlot(cont, IDX_B, 45, 39);
-        v[IDX_C][TAB_SHIELD] = addInputSlot(cont, IDX_C, 63, 39);
-        v[IDX_D][TAB_SHIELD] = addInputSlot(cont, IDX_D, 27, 57);
-        v[IDX_E][TAB_SHIELD] = addInputSlot(cont, IDX_E, 45, 57);
-        v[IDX_F][TAB_SHIELD] = addInputSlot(cont, IDX_F, 63, 57);
-        v[IDX_H][TAB_SHIELD] = addInputSlot(cont, IDX_H, 45, 75);
+        v[IDX_A][TAB_SHIELD] = addInputSlot(cont, IDX_A, 31, 52);
+        v[IDX_B][TAB_SHIELD] = addInputSlot(cont, IDX_B, 49, 52);
+        v[IDX_C][TAB_SHIELD] = addInputSlot(cont, IDX_C, 67, 52);
+        v[IDX_D][TAB_SHIELD] = addInputSlot(cont, IDX_D, 31, 70);
+        v[IDX_E][TAB_SHIELD] = addInputSlot(cont, IDX_E, 49, 70);
+        v[IDX_F][TAB_SHIELD] = addInputSlot(cont, IDX_F, 67, 70);
+        v[IDX_H][TAB_SHIELD] = addInputSlot(cont, IDX_H, 49, 88);
 
         // Инвентарь игрока
         playerStartIdx = this.slots.size();

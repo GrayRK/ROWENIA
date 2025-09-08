@@ -73,9 +73,9 @@ public class WeaponForgeScreen extends AbstractContainerScreen<WeaponForgeMenu> 
     private static final int AR_R_X  =78; // На какую X устанавливаем правую кнопку в GUI
     private static final int AR_Y    =129;   // На какой Y устанавливаем обе кнопки в GUI
         //Кнопка крафта
-    private static final int CRAFT_W =56;  // Ширина кнопки крафта
+    private static final int CRAFT_W =114;  // Ширина кнопки крафта
     private static final int CRAFT_H =14;   // Высота кнопки крафта
-    private static final int CRAFT_X =166; // На какую X устанавливаем кнопку крафта в GUI
+    private static final int CRAFT_X =108; // На какую X устанавливаем кнопку крафта в GUI
     private static final int CRAFT_Y =129; // На какую Y устанавливаем кнопку крафта в GUI
 
     // Индикатор топлива
@@ -86,13 +86,15 @@ public class WeaponForgeScreen extends AbstractContainerScreen<WeaponForgeMenu> 
     private static final int FUEL_Y       =156;  // На какую Y устанавливаем индикатор в GUI
 
     // Наковальня анимация
-    private static final int FORGE_X =145; // На какую X устанавливаем наковальню в GUI
-    private static final int FORGE_Y =36; // На какую Y устанавливаем наковальню в GU                   I
-    private static final int FORGE_W =86; // Ширина кадра на текстуре для анимации
-    private static final int FORGE_H =90; // Высота кадра на текстуре для анимации
+    private static final int FORGE_X =110; // На какую X устанавливаем наковальню в GUI
+    private static final int FORGE_Y =25;  // На какую Y устанавливаем наковальню в GUI
+    private static final int FORGE_SLICE_W =100; // Ширина кадра на текстуре для анимации
+    private static final int FORGE_SLICE_H =100; // Высота кадра на текстуре для анимации
+    private static final int FORGE_TEX_W =300;  // Общая ширина текстуры наковальни
+    private static final int FORGE_TEX_H =100;   // Общая высота текстуры наковальни
+    private static final int FORGE_U_A = 100;  // Начало кадра по X для фазы анимации A
+    private static final int FORGE_U_B = 200; // Начало кадра по X для фазы анимаяции B
     private static final int HAMMER_SPEED_TICKS = 6; // Скорость анимации в тиках
-    private static final int FORGE_U_A = 86;  // Начало кадра по X для фазы анимации A
-    private static final int FORGE_U_B = 172; // Начало кадра по X для фазы анимации B
     private int hammerStartPhase = 0; // Стартовая фаза анимации (0 — начать с A, 1 — начать с B)
     private long pressStartTick = 0L; // Тик начала удержания (для фазы)
 
@@ -108,8 +110,8 @@ public class WeaponForgeScreen extends AbstractContainerScreen<WeaponForgeMenu> 
     // Задаём размеры в соответствии с текстурой
     public WeaponForgeScreen(WeaponForgeMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
-        this.imageWidth = TEX_W;
-        this.imageHeight = TEX_H;
+        this.imageWidth = TEX_W + 50;
+        this.imageHeight = TEX_H + 50;
     }
 
     // Выбирает фон для текущей вкладки
@@ -216,7 +218,7 @@ public class WeaponForgeScreen extends AbstractContainerScreen<WeaponForgeMenu> 
         }
 
         lastProgress = prog;
-        g.blit(FORGE_ANIM, leftPos + FORGE_X, topPos + FORGE_Y, forgeU, 0, FORGE_W, FORGE_H, 186, 57);
+        g.blit(FORGE_ANIM, leftPos + FORGE_X, topPos + FORGE_Y, forgeU, 0, FORGE_SLICE_W, FORGE_SLICE_H, FORGE_TEX_W, FORGE_TEX_H);
 
         // Кнопки
         double relX = mouseX - leftPos;
