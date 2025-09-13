@@ -1,5 +1,6 @@
 package com.ixiastraixi.roweniafull.mechanics.warforge.blockentity;
 
+import com.ixiastraixi.roweniafull.mechanics.warforge.blocks.WeaponForgeBlock;
 import com.ixiastraixi.roweniafull.mechanics.warforge.menu.WeaponForgeMenu;
 import com.ixiastraixi.roweniafull.mechanics.warforge.recipe.WeaponForgingRecipe;
 import com.ixiastraixi.roweniafull.registry.warforge.WarforgeBlockEntities;
@@ -65,6 +66,7 @@ public class WeaponForgeBlockEntity extends BlockEntity implements MenuProvider 
     private int fuelPullCooldown             = 0;     // Задержка для забора в буфер
     private int fuelNeed                     = 1;     // Кол-во топлива на крафт
     private boolean fuelHadItemLastTick      = false; // Проверка было ли топливо в прошлый тик
+    private boolean litCached = false;
 
     // --- Утилиты ---
     private long lastInputsFingerprint = Long.MIN_VALUE;
@@ -209,6 +211,24 @@ public class WeaponForgeBlockEntity extends BlockEntity implements MenuProvider 
         setChanged();
     }
 
+    private void syncLitToState() {
+        if (level == null || level.isClientSide) return;
+
+        boolean wantLit = totalBuffer() > 0;
+
+        if (wantLit == litCached) return;
+        litCached = wantLit;
+
+        BlockState st = level.getBlockState(worldPosition);
+        if (st.hasProperty(WeaponForgeBlock.LIT) && st.getValue(WeaponForgeBlock.LIT) != wantLit) {
+            level.setBlock(worldPosition, st.setValue(WeaponForgeBlock.LIT, wantLit), 3);
+        }
+    }
+
+    private boolean hasFuelInBuffer() {
+        return this.totalBuffer() > 0; // подставь своё поле/логику (или fuelStoredInternal() > 0)
+    }
+
 //--------------------------------------------
 //          Главный тик сервера
 //--------------------------------------------
@@ -231,6 +251,7 @@ public class WeaponForgeBlockEntity extends BlockEntity implements MenuProvider 
         }
 
         // 2. Подтягиваем топливо в буфер с задержкой
+        final boolean hadFuelBefore = be.hasFuelInBuffer();
         boolean fuelNowNotEmpty = !be.items.get(SLOT_FUEL).isEmpty();
         if (fuelNowNotEmpty && !be.fuelHadItemLastTick) {
             be.fuelPullCooldown = Math.max(be.fuelPullCooldown, 15);
@@ -239,6 +260,10 @@ public class WeaponForgeBlockEntity extends BlockEntity implements MenuProvider 
         if (be.fuelPullCooldown > 0) be.fuelPullCooldown--;
         if (be.fuelPullCooldown == 0 && be.refillBufferFromFuelSlot()) {
             be.fuelPullCooldown = 15;
+            be.syncLitToState();
+        }
+        if (hadFuelBefore && !be.hasFuelInBuffer()) {
+            be.syncLitToState();
         }
 
         // 3. Ищем рецепт для текущей вкладки
